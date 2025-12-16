@@ -1,0 +1,356 @@
+/* 知识图谱样式定义 */
+:root {
+  /* 知识图谱专用颜色 */
+  --graph-primary-color: #3498db;
+  --graph-secondary-color: #2ecc71;
+  --graph-tertiary-color: #e74c3c;
+  --graph-quaternary-color: #9b59b6;
+  --graph-quinary-color: #f39c12;
+  --graph-node-bg: #ffffff;
+  --graph-node-border: #e0e0e0;
+  --graph-link: #95a5a6;
+  --graph-bg: #f8f9fa;
+}
+
+/* 知识图谱容器样式 */
+.knowledge-graph-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* 图谱头部样式 */
+.knowledge-graph-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.knowledge-graph-header h1 {
+  font-size: 2.2rem;
+  color: var(--dark-color);
+  margin-bottom: 15px;
+}
+
+.knowledge-graph-header p {
+  color: var(--text-color);
+  font-size: 1.1rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* 控制按钮样式 */
+.knowledge-graph-controls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 25px;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.knowledge-graph-controls .btn {
+  min-width: 120px;
+  text-align: center;
+  padding: 10px 15px;
+  font-size: 0.95rem;
+}
+
+/* 图谱画布样式 */
+.knowledge-graph-canvas {
+  width: 100%;
+  height: 700px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: var(--graph-bg);
+  position: relative;
+}
+
+/* SVG容器样式 */
+#graph-svg {
+  width: 100%;
+  height: 100%;
+  background-color: var(--graph-bg);
+}
+
+/* 节点样式 */
+.graph-node {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  stroke: white;
+  stroke-width: 2px;
+}
+
+/* 节点悬停效果 */
+.graph-node:hover {
+  filter: brightness(1.2);
+  transform: scale(1.1);
+  stroke: #333;
+  stroke-width: 2.5px;
+}
+
+/* 节点文本样式 */
+.graph-node-text {
+  font-family: "Microsoft YaHei", "SimHei", sans-serif;
+  font-size: 14px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  fill: white;
+  font-weight: 700;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 连接线样式 */
+.graph-link {
+  fill: none;
+  stroke: #95a5a6;
+  stroke-width: 2px;
+  opacity: 0.7;
+  transition: all 0.3s ease;
+}
+
+/* 连接线悬停效果 */
+.graph-link:hover {
+  stroke-width: 3px;
+  opacity: 0.9;
+}
+
+/* 箭头标记样式 */
+.arrowhead {
+  fill: var(--graph-link);
+  stroke-width: 0;
+}
+
+.arrowhead-level-1 {
+  fill: var(--graph-primary-color);
+}
+
+.arrowhead-level-2 {
+  fill: var(--graph-secondary-color);
+}
+
+.arrowhead-level-3 {
+  fill: var(--graph-tertiary-color);
+}
+
+.arrowhead-level-4 {
+  fill: var(--graph-quaternary-color);
+}
+
+.arrowhead-level-5 {
+  fill: var(--graph-quinary-color);
+}
+
+/* 节点悬停效果 */
+.graph-node:hover {
+  filter: brightness(1.2);
+  transform: scale(1.1);
+}
+
+.graph-node:hover+.graph-node-text {
+  font-weight: bold;
+}
+
+/* 连接线悬停效果 */
+.graph-link:hover {
+  stroke-width: 4px;
+  opacity: 1;
+}
+
+/* 缩放控制提示 */
+.zoom-hint {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  z-index: 10;
+}
+
+/* 图例样式 */
+.graph-legend {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.graph-legend h4 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.legend-item:last-child {
+  margin-bottom: 0;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.legend-item span {
+  font-size: 0.9rem;
+  color: #555;
+  font-weight: 500;
+}
+
+/* 加载状态样式 */
+.graph-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  z-index: 20;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: var(--graph-primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 错误提示样式 */
+.graph-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  text-align: center;
+  padding: 20px;
+}
+
+.graph-error-content {
+  max-width: 500px;
+}
+
+.graph-error-icon {
+  font-size: 3rem;
+  color: var(--danger-color);
+  margin-bottom: 15px;
+}
+
+.graph-error h3 {
+  color: var(--danger-color);
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+}
+
+.graph-error p {
+  color: var(--text-color);
+  margin-bottom: 20px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .knowledge-graph-canvas {
+    height: 500px;
+  }
+
+  .knowledge-graph-controls {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .knowledge-graph-controls .btn {
+    width: 100%;
+    max-width: 200px;
+    margin: 5px 0;
+  }
+
+  .graph-node-level-1 {
+    r: 20px;
+  }
+
+  .graph-node-level-2 {
+    r: 16px;
+  }
+
+  .graph-node-level-3 {
+    r: 13px;
+  }
+
+  .graph-node-level-4 {
+    r: 11px;
+  }
+
+  .graph-node-level-5 {
+    r: 10px;
+  }
+
+  .graph-node-text {
+    font-size: 10px;
+  }
+
+  .zoom-hint {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .knowledge-graph-canvas {
+    height: 400px;
+  }
+
+  .knowledge-graph-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .knowledge-graph-header p {
+    font-size: 1rem;
+  }
+}
+
+/* 画布背景网格线 */
+.grid-bg {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.05);
+  stroke-width: 1px;
+}
+
+.grid-bg-major {
+  stroke: rgba(0, 0, 0, 0.1);
+  stroke-width: 1.5px;
+}

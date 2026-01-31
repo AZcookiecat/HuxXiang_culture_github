@@ -61,7 +61,7 @@
 
         <!-- 论坛帖子列表 -->
         <div class="forum-posts">
-          <div v-for="post in forumPosts" :key="post.id" class="forum-post">
+          <div v-for="post in currentPagePosts" :key="post.id" class="forum-post">
             <div class="post-header">
               <div class="post-author">
                 <img :src="post.authorAvatar" alt="Author avatar" class="author-avatar" loading="lazy" />
@@ -252,39 +252,99 @@ export default {
       },
       {
         id: '2',
-        title: '关于岳阳楼的历史变迁研究',
-        excerpt: '岳阳楼作为江南三大名楼之一，经历了多次损毁和重建，其历史变迁反映了湖湘地区的发展历程...',
+        title: '岳麓书院的历史与文化价值',
+        excerpt: '岳麓书院是中国古代四大书院之一，位于湖南省长沙市岳麓山下，是湖湘文化的重要载体...',
         authorName: '历史学者',
         authorAvatar: 'https://picsum.photos/seed/user2/100/100',
         createdAt: '2023-06-10',
-        views: 412,
-        comments: 35,
-        likes: 76,
+        views: 389,
+        comments: 27,
+        likes: 65,
         category: '历史研究'
       },
       {
         id: '3',
-        title: '湘绣艺术的保护与创新',
-        excerpt: '湘绣作为中国四大名绣之一，面临着传统工艺传承的困境，如何在保护传统的同时进行创新是一个重要课题...',
+        title: '湘绣艺术的魅力与传承',
+        excerpt: '湘绣是中国四大名绣之一，起源于湖南省长沙、湘潭一带，具有悠久的历史和独特的艺术风格...',
         authorName: '艺术爱好者',
         authorAvatar: 'https://picsum.photos/seed/user3/100/100',
-        createdAt: '2023-06-08',
-        views: 387,
-        comments: 29,
-        likes: 65,
+        createdAt: '2023-06-05',
+        views: 412,
+        comments: 33,
+        likes: 76,
         category: '传统艺术'
       },
       {
         id: '4',
-        title: '湖南美食文化的地域特色',
-        excerpt: '湖南菜以其独特的辣味风格著称，但不同地区的湘菜也有着各自的特色，值得我们深入了解...',
-        authorName: '美食家',
+        title: '桃花源记：探寻陶渊明笔下的湘楚秘境',
+        excerpt: '《桃花源记》的常德原型，为何能成为湖湘文化里的“精神原乡”？',
+        authorName: '文化探索者',
         authorAvatar: 'https://picsum.photos/seed/user4/100/100',
-        createdAt: '2023-06-05',
-        views: 642,
-        comments: 57,
-        likes: 124,
+        createdAt: '2023-05-30',
+        views: 678,
+        comments: 54,
+        likes: 123,
+        category: '文化讨论'
+      },
+      {
+        id: '5',
+        title: '湘菜：辣里寻味的湖湘烟火气',
+        excerpt: '不止于辣！湘菜的百味江湖，藏着怎样的湖湘性格？',
+        authorName: '美食爱好者',
+        authorAvatar: 'https://picsum.photos/seed/user5/100/100',
+        createdAt: '2023-05-25',
+        views: 892,
+        comments: 76,
+        likes: 156,
         category: '饮食文化'
+      },
+      {
+        id: '6',
+        title: '衡山：寿岳之山的千年香火与文化传承',
+        excerpt: '南岳衡山，为何能成为湖湘大地的信仰高地与自然秘境？',
+        authorName: '山水行者',
+        authorAvatar: 'https://picsum.photos/seed/user6/100/100',
+        createdAt: '2023-05-20',
+        views: 567,
+        comments: 43,
+        likes: 98,
+        category: '自然文化'
+      },
+      {
+        id: '7',
+        title: '花鼓戏：乡音里的湖湘百态',
+        excerpt: '一口乡音入戏来！湖南花鼓戏，如何守住湖湘的文化根脉？',
+        authorName: '戏曲爱好者',
+        authorAvatar: 'https://picsum.photos/seed/user7/100/100',
+        createdAt: '2023-05-15',
+        views: 432,
+        comments: 31,
+        likes: 76,
+        category: '传统艺术'
+      },
+      {
+        id: '8',
+        title: '马王堆汉墓：穿越千年的湘楚文明密码',
+        excerpt: '马王堆汉墓的惊世发掘，如何改写我们对汉代湘楚文明的认知？',
+        authorName: '考古爱好者',
+        authorAvatar: 'https://picsum.photos/seed/user8/100/100',
+        createdAt: '2023-05-10',
+        views: 789,
+        comments: 65,
+        likes: 143,
+        category: '历史研究'
+      },
+      {
+        id: '9',
+        title: '铜官窑：黑石号上的大唐湘瓷传奇',
+        excerpt: '长沙铜官窑，为何能成为大唐海上丝绸之路的“陶瓷名片”？',
+        authorName: '陶瓷爱好者',
+        authorAvatar: 'https://picsum.photos/seed/user9/100/100',
+        createdAt: '2023-05-05',
+        views: 654,
+        comments: 48,
+        likes: 112,
+        category: '文化遗产'
       }
     ])
     
@@ -387,6 +447,14 @@ export default {
       }
     }
     
+    // 计算属性：当前页显示的帖子
+    const currentPagePosts = computed(() => {
+      const pageSize = 3
+      const startIndex = (currentPage.value - 1) * pageSize
+      const endIndex = startIndex + pageSize
+      return forumPosts.value.slice(startIndex, endIndex)
+    })
+    
     // 方法：分页导航
     const goToPage = (page) => {
       if (page >= 1 && page <= forumPages.value) {
@@ -473,6 +541,7 @@ export default {
       forumSortBy,
       forumPages,
       forumPosts,
+      currentPagePosts,
       activities,
       contribution,
       feedback,

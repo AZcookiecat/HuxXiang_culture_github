@@ -121,8 +121,8 @@
       <div class="map-section">
         <h2 class="section-title">位置地图</h2>
         <div class="map-container">
-          <!-- 这里使用占位图片，实际项目中应该使用真实地图API -->
-          <img src="https://picsum.photos/seed/map/1200/500" alt="位置地图" class="map-image" />
+          <!-- 这里使用真实地图图片 -->
+          <img src="../assets/imgs/image.png" alt="位置地图" class="map-image" />
           <div class="map-overlay">
             <div class="map-marker"></div>
           </div>
@@ -302,17 +302,32 @@ export default {
   flex: 1;
   min-width: 300px;
   background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #f0f0f0;
+}
+
+.contact-info::before,
+.contact-form-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--primary-color), #f87171);
 }
 
 .section-title {
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
+  font-size: 2rem;
+  margin-bottom: 1.8rem;
   color: #333;
   position: relative;
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.8rem;
+  font-weight: 600;
 }
 
 .section-title::after {
@@ -320,58 +335,79 @@ export default {
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 60px;
+  width: 80px;
   height: 3px;
-  background-color: var(--primary-color);
+  background: linear-gradient(to right, var(--primary-color), #f87171);
 }
 
 /* 联系信息样式 */
 .info-items {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
 
 .info-item {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 1.2rem;
+  margin-bottom: 1.8rem;
+  padding: 1.2rem;
+  background-color: #fef7f7;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  border: 1px solid #f0f0f0;
+}
+
+.info-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(220, 38, 38, 0.15);
+  border-color: var(--primary-color);
 }
 
 .info-icon {
-  font-size: 1.5rem;
-  color: var(--primary-color);
-  background-color: #f8f9fa;
-  width: 40px;
-  height: 40px;
+  font-size: 1.8rem;
+  color: white;
+  background: linear-gradient(135deg, var(--primary-color), #f87171);
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.info-item:hover .info-icon {
+  transform: scale(1.1) rotate(5deg);
 }
 
 .info-text h3 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.6rem 0;
   color: #333;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
+  font-weight: 600;
 }
 
 .info-text p {
   margin: 0;
   color: #666;
-  line-height: 1.5;
+  line-height: 1.6;
+  font-size: 1rem;
 }
 
 /* 社交媒体样式 */
 .social-media {
-  margin-bottom: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid #eee;
+  margin-bottom: 2.5rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid #f0f0f0;
 }
 
 .social-media h3 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1.2rem 0;
   color: #333;
+  font-size: 1.3rem;
+  font-weight: 600;
 }
 
 .social-links {
@@ -383,96 +419,194 @@ export default {
 .social-link {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #f8f9fa;
-  color: #333;
-  border-radius: 4px;
-  transition: all 0.3s;
+  gap: 0.6rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  border: 1px solid #f0f0f0;
 }
 
-.social-link:hover {
-  background-color: var(--primary-color);
+.social-link:nth-child(1) {
+  background-color: #f0f9ff;
+  color: #1da1f2;
+  border-color: #e1f5fe;
+}
+
+.social-link:nth-child(1):hover {
+  background-color: #1da1f2;
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(29, 161, 242, 0.4);
+}
+
+.social-link:nth-child(2) {
+  background-color: #fff0f0;
+  color: #e0245e;
+  border-color: #ffebee;
+}
+
+.social-link:nth-child(2):hover {
+  background-color: #e0245e;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(224, 36, 94, 0.4);
+}
+
+.social-link:nth-child(3) {
+  background-color: #f0f0f0;
+  color: #ff0000;
+  border-color: #e0e0e0;
+}
+
+.social-link:nth-child(3):hover {
+  background-color: #ff0000;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.4);
+}
+
+.social-link:nth-child(4) {
+  background-color: #fffaf0;
+  color: #000000;
+  border-color: #fff3e0;
+}
+
+.social-link:nth-child(4):hover {
+  background-color: #000000;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 /* 常见问题样式 */
 .faq-section {
-  padding-top: 2rem;
-  border-top: 1px solid #eee;
+  padding-top: 2.5rem;
+  border-top: 1px solid #f0f0f0;
 }
 
 .faq-section h3 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1.2rem 0;
   color: #333;
+  font-size: 1.3rem;
+  font-weight: 600;
 }
 
 .faq-item {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.faq-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .faq-item:last-child {
-  border-bottom: none;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .faq-question {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 0;
+  padding: 1.2rem 1.5rem;
   cursor: pointer;
-  transition: color 0.3s;
+  transition: all 0.3s ease;
+  background-color: #fef7f7;
+  position: relative;
 }
 
 .faq-question:hover {
   color: var(--primary-color);
+  background-color: #fef2f2;
 }
 
 .faq-question span {
   font-weight: 500;
   color: #333;
+  flex: 1;
+  transition: color 0.3s ease;
 }
 
 .faq-question:hover span {
   color: var(--primary-color);
 }
 
+.faq-question i {
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+  color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.faq-question:hover i {
+  transform: translateX(3px) rotate(90deg);
+}
+
 .faq-answer {
-  padding: 0 0 1rem 0;
+  padding: 0 1.5rem 1.5rem;
+  background-color: white;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    padding-top: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 200px;
+    padding-top: 1rem;
+  }
 }
 
 .faq-answer p {
   color: #666;
-  line-height: 1.5;
+  line-height: 1.6;
   margin: 0;
+  padding-top: 1rem;
+  border-top: 1px dashed #f0f0f0;
 }
 
 /* 联系表单样式 */
 .contact-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.8rem;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .form-group label {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.8rem;
   color: #333;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: color 0.3s ease;
+}
+
+.form-group:focus-within label {
+  color: var(--primary-color);
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  border: 2px solid #f0f0f0;
+  border-radius: 8px;
   font-size: 1rem;
-  transition: border-color 0.3s;
+  transition: all 0.3s ease;
+  background-color: #fefefe;
 }
 
 .form-group input:focus,
@@ -480,52 +614,115 @@ export default {
 .form-group textarea:focus {
   outline: none;
   border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  background-color: white;
+  transform: translateY(-1px);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px;
 }
 
 .checkbox-group {
   flex-direction: row;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.8rem;
+  padding: 1.2rem;
+  background-color: #fef7f7;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.checkbox-group:hover {
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
 }
 
 .checkbox-group input {
   width: auto;
+  transform: scale(1.1);
+  accent-color: var(--primary-color);
 }
 
 .checkbox-group label {
   margin: 0;
   font-weight: normal;
   color: #666;
+  flex: 1;
+  font-size: 0.95rem;
 }
 
 .checkbox-group a {
   color: var(--primary-color);
   text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
 }
 
 .checkbox-group a:hover {
-  text-decoration: underline;
+  text-decoration: none;
+  color: #f87171;
+}
+
+.checkbox-group a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: #f87171;
+  transition: width 0.3s ease;
+}
+
+.checkbox-group a:hover::after {
+  width: 100%;
 }
 
 .submit-button {
-  padding: 0.75rem 1.5rem;
-  background-color: var(--primary-color);
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, var(--primary-color), #f87171);
   color: white;
   border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: 500;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+  position: relative;
+  overflow: hidden;
 }
 
 .submit-button:hover:not(:disabled) {
-  background-color: #c62828;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+}
+
+.submit-button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .submit-button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+  box-shadow: none;
+}
+
+.submit-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.submit-button:hover::before {
+  left: 100%;
 }
 
 /* 地图样式 */
@@ -558,8 +755,8 @@ export default {
 
 .map-marker {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 75%;
+  left: 62%;
   transform: translate(-50%, -50%);
   width: 30px;
   height: 30px;

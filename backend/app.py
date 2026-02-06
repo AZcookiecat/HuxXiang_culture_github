@@ -1,8 +1,15 @@
-from app import create_app, db
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 from models.user import User
 from models.cultural_resource import CulturalResource
 from models.community_post import CommunityPost
 import os
+
+
+app = Flask(__name__)
+
+# 从app模块导入db和create_app
+from app import db, create_app
 
 
 app = create_app()

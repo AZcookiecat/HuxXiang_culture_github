@@ -14,13 +14,13 @@ def register():
     data = request.get_json()
     
     # 验证输入
-    if not data.get('username') or len(data['username']) < 3:
+    if not data or not data.get('username') or len(data['username']) < 3:
         return jsonify({'message': '用户名至少需要3个字符'}), 400
         
-    if not data.get('email') or not re.match(r'^[^@]+@[^@]+\.[^@]+$', data['email']):
+    if not data or not data.get('email') or not re.match(r'^[^@]+@[^@]+\.[^@]+$', data['email']):
         return jsonify({'message': '邮箱格式不正确'}), 400
         
-    if not data.get('password') or len(data['password']) < 6:
+    if not data or not data.get('password') or len(data['password']) < 6:
         return jsonify({'message': '密码至少需要6个字符'}), 400
     
     # 检查用户名或邮箱是否已存在
@@ -57,6 +57,9 @@ def register():
 def login():
     """用户登录，支持用户名或邮箱登录"""
     data = request.get_json()
+    
+    if not data:
+        return jsonify({'message': '请求数据不能为空'}), 400
     
     # 获取用户名/邮箱和密码
     username_or_email = data.get('username') or data.get('usernameOrEmail')
@@ -122,10 +125,19 @@ def update_profile():
     
     data = request.get_json()
     
+    if not data:
+        return jsonify({'message': '请求数据不能为空'}), 400
+
     if 'bio' in data:
         user.bio = data['bio']
     if 'avatar' in data:
         user.avatar = data['avatar']
+    if 'username' in data:
+        # 检查用户名是否已被其他用户使用
+        existing_user = User.query.filter(User.username == data['username'], User.id != user_id).first()
+        if existing_user:
+            return jsonify({'message': '用户名已被占用'}), 400
+        user.username = data['username']
     
     db.session.commit()
     

@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify
 from app import db
-from sqlalchemy import text
 
 
 main_bp = Blueprint('main', __name__)
@@ -24,7 +23,7 @@ def health_check():
     """健康检查接口"""
     try:
         # 尝试连接数据库
-        db.session.execute(text('SELECT 1'))
+        db.session.execute('SELECT 1')
         return jsonify({'status': 'healthy', 'database': 'connected'}), 200
     except Exception as e:
         return jsonify({'status': 'unhealthy', 'database': 'error', 'error': str(e)}), 500

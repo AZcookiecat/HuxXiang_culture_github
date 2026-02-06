@@ -35,8 +35,8 @@ class Comment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # 子评论 - 注意这里要指定remote_side来解决自引用关系
-    replies = db.relationship('Comment', backref=db.backref('parent', remote_side=[id]), lazy=True)
+    # 子评论
+    replies = db.relationship('Comment', backref='parent', lazy=True, foreign_keys='Comment.parent_id')
 
     def __repr__(self):
         return f'<Comment {self.id}>'

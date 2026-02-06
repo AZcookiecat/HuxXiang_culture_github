@@ -50,63 +50,40 @@
       <section class="partners-section">
         <h2 class="section-title">合作伙伴</h2>
         <p class="section-description">我们与众多高校、研究机构、文化单位和企业建立了紧密的合作关系，共同推动湖湘文化的数字化保护与传播。</p>
-        <div class="partners-grid">
-          <div v-for="partner in partners" :key="partner.id" class="partner-item">
-            <img :src="partner.logoUrl" :alt="partner.name" loading="lazy" />
-            <p>{{ partner.name }}</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- 数据统计 -->
-      <section class="stats-section">
-        <div class="stats-grid">
-          <div v-for="stat in statistics" :key="stat.id" class="stat-item">
-            <div class="stat-icon"><i :class="stat.icon"></i></div>
-            <div class="stat-value">{{ stat.value }}</div>
-            <div class="stat-label">{{ stat.label }}</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 文化理念 -->
-      <section class="philosophy-section">
-        <div class="philosophy-content">
-          <div class="philosophy-item">
-            <div class="philosophy-icon"><i class="fas fa-book-reader"></i></div>
-            <h3>传承创新</h3>
-            <p>在传承湖湘文化精髓的基础上，通过数字化手段实现创新表达和传播，让传统文化焕发时代活力。</p>
-          </div>
-          <div class="philosophy-item">
-            <div class="philosophy-icon"><i class="fas fa-users"></i></div>
-            <h3>开放共享</h3>
-            <p>秉持开放共享的理念，为公众提供免费、便捷的湖湘文化资源获取渠道，促进文化的广泛传播。</p>
-          </div>
-          <div class="philosophy-item">
-            <div class="philosophy-icon"><i class="fas fa-lightbulb"></i></div>
-            <h3>融合发展</h3>
-            <p>推动文化与科技、教育、旅游等产业的深度融合，实现湖湘文化的多元化发展和价值提升。</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- 用户评价 -->
-      <section class="testimonials-section">
-        <h2 class="section-title">用户评价</h2>
-        <div class="testimonials-slider">
-          <div v-for="testimonial in testimonials" :key="testimonial.id" class="testimonial-item">
-            <div class="testimonial-quote">
-              <i class="fas fa-quote-left"></i>
-              <p>{{ testimonial.quote }}</p>
-            </div>
-            <div class="testimonial-author">
-              <img :src="testimonial.authorAvatar" :alt="testimonial.authorName" loading="lazy" />
-              <div class="author-details">
-                <h4>{{ testimonial.authorName }}</h4>
-                <p>{{ testimonial.authorTitle }}</p>
+        
+        <!-- 合作伙伴轮播图 -->
+        <div class="partners-carousel">
+          <!-- 轮播控制按钮 -->
+          <button class="carousel-btn carousel-btn-prev" @click="prevSlide">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          
+          <!-- 轮播轨道 -->
+          <div class="carousel-track" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
+            <!-- 轮播项（每组3个合作伙伴） -->
+            <div v-for="(slide, index) in carouselSlides" :key="index" class="carousel-slide">
+              <div v-for="partner in slide" :key="partner.id" class="partner-item">
+                <img :src="partner.logoUrl" :alt="partner.name" loading="lazy" />
+                <p>{{ partner.name }}</p>
               </div>
             </div>
           </div>
+          
+          <!-- 轮播控制按钮 -->
+          <button class="carousel-btn carousel-btn-next" @click="nextSlide">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+        
+        <!-- 轮播指示器 -->
+        <div class="carousel-indicators">
+          <button 
+            v-for="(slide, index) in carouselSlides" 
+            :key="index"
+            class="carousel-indicator"
+            :class="{ active: currentSlide === index }"
+            @click="goToSlide(index)"
+          ></button>
         </div>
       </section>
     </div>
@@ -114,7 +91,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import XiaozhuImage from '../assets/imgs/xiaozhu.jpeg' // 导入图片
 
 export default {
@@ -225,64 +202,75 @@ export default {
       }
     ])
     
-    // 统计数据
-    const statistics = ref([
-      {
-        id: '1',
-        icon: 'fas fa-database',
-        value: '10,000+',
-        label: '数字化资源'
-      },
-      {
-        id: '2',
-        icon: 'fas fa-users',
-        value: '100,000+',
-        label: '注册用户'
-      },
-      {
-        id: '3',
-        icon: 'fas fa-globe-asia',
-        value: '20+',
-        label: '合作机构'
-      },
-      {
-        id: '4',
-        icon: 'fas fa-eye',
-        value: '1,000,000+',
-        label: '月访问量'
-      }
-    ])
+    // 轮播图状态
+    const currentSlide = ref(0)
+    let autoplayTimer = null
     
-    // 用户评价数据
-    const testimonials = ref([
-      {
-        id: '1',
-        quote: '作为一名湖湘文化研究者，这个平台为我提供了丰富的数字化资源，极大地方便了我的研究工作。界面友好，操作简单，内容丰富，是了解湖湘文化的重要窗口。',
-        authorName: '周教授',
-        authorTitle: '湖南大学历史系教授',
-        authorAvatar: 'https://picsum.photos/seed/testimonial1/100/100'
-      },
-      {
-        id: '2',
-        quote: '通过这个平台，我第一次如此直观地了解到湖湘文化的博大精深。3D文物展示和虚拟展厅功能非常震撼，让我仿佛身临其境，感受传统文化的魅力。',
-        authorName: '王同学',
-        authorTitle: '湖南师范大学学生',
-        authorAvatar: 'https://picsum.photos/seed/testimonial2/100/100'
-      },
-      {
-        id: '3',
-        quote: '平台的数字地图功能非常实用，帮助我规划了一次精彩的湖湘文化之旅。每个文化地标的详细介绍和图片让我在出发前就对目的地有了深入的了解。',
-        authorName: '张先生',
-        authorTitle: '文化旅游爱好者',
-        authorAvatar: 'https://picsum.photos/seed/testimonial3/100/100'
+    // 将合作伙伴数据分成每组3个
+    const carouselSlides = computed(() => {
+      const slides = []
+      for (let i = 0; i < partners.value.length; i += 3) {
+        slides.push(partners.value.slice(i, i + 3))
       }
-    ])
+      return slides
+    })
+    
+    // 上一张幻灯片
+    const prevSlide = () => {
+      if (currentSlide.value > 0) {
+        currentSlide.value--
+      } else {
+        currentSlide.value = carouselSlides.value.length - 1
+      }
+    }
+    
+    // 下一张幻灯片
+    const nextSlide = () => {
+      if (currentSlide.value < carouselSlides.value.length - 1) {
+        currentSlide.value++
+      } else {
+        currentSlide.value = 0
+      }
+    }
+    
+    // 跳转到指定幻灯片
+    const goToSlide = (index) => {
+      currentSlide.value = index
+    }
+    
+    // 自动轮播
+    const startAutoplay = () => {
+      autoplayTimer = setInterval(() => {
+        nextSlide()
+      }, 5000) // 每5秒自动切换
+    }
+    
+    // 停止自动轮播
+    const stopAutoplay = () => {
+      if (autoplayTimer) {
+        clearInterval(autoplayTimer)
+        autoplayTimer = null
+      }
+    }
+    
+    // 组件挂载时启动自动轮播
+    onMounted(() => {
+      startAutoplay()
+    })
+    
+    // 组件卸载时停止自动轮播
+    onUnmounted(() => {
+      stopAutoplay()
+    })
     
     return {
       teamMembers,
       partners,
-      statistics,
-      testimonials
+      currentSlide,
+      carouselSlides,
+      prevSlide,
+      nextSlide,
+      goToSlide
     }
   }
 }
@@ -525,19 +513,33 @@ export default {
   padding: 3rem 0;
 }
 
-.partners-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+/* 合作伙伴轮播图样式 */
+.partners-carousel {
+  position: relative;
+  max-width: 1000px;
+  margin: 0 auto 2rem;
+  overflow: hidden;
+  padding: 0 4rem;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+}
+
+.carousel-slide {
+  flex: 0 0 100%;
+  display: flex;
+  gap: 2.5rem;
+  padding: 0 1rem;
 }
 
 .partner-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1.5rem;
+  padding: 2rem;
   background-color: white;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -550,9 +552,9 @@ export default {
 }
 
 .partner-item img {
-  max-width: 150px;
-  max-height: 80px;
-  margin-bottom: 1rem;
+  max-width: 180px;
+  max-height: 100px;
+  margin-bottom: 1.5rem;
   object-fit: contain;
 }
 
@@ -560,157 +562,70 @@ export default {
   color: #333;
   font-weight: bold;
   text-align: center;
+  font-size: 1.1rem;
 }
 
-/* 数据统计样式 */
-.stats-section {
-  margin: 4rem 0;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.stat-item {
-  text-align: center;
-  padding: 2rem;
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.stat-icon {
-  font-size: 2.5rem;
-  color: var(--primary-color);
-  margin-bottom: 1rem;
-}
-
-.stat-value {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 0.5rem;
-}
-
-.stat-label {
-  color: #666;
-  font-size: 1rem;
-}
-
-/* 文化理念样式 */
-.philosophy-section {
-  margin: 4rem 0;
-  background-color: #f8f9fa;
-  padding: 3rem 0;
-}
-
-.philosophy-content {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.philosophy-item {
-  text-align: center;
-  padding: 2rem;
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s;
-}
-
-.philosophy-item:hover {
-  transform: translateY(-5px);
-}
-
-.philosophy-icon {
-  font-size: 2.5rem;
-  color: var(--primary-color);
-  margin-bottom: 1rem;
-}
-
-.philosophy-item h3 {
-  margin: 0 0 1rem 0;
-  color: #333;
-}
-
-.philosophy-item p {
-  color: #666;
-  line-height: 1.5;
-}
-
-/* 用户评价样式 */
-.testimonials-section {
-  margin: 4rem 0;
-}
-
-.testimonials-slider {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.testimonial-item {
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 2rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.testimonial-quote {
-  position: relative;
-  margin-bottom: 2rem;
-}
-
-.testimonial-quote i {
+/* 轮播控制按钮 */
+.carousel-btn {
   position: absolute;
-  top: -10px;
-  left: -10px;
-  font-size: 2rem;
-  color: var(--primary-color);
-  opacity: 0.2;
-}
-
-.testimonial-quote p {
-  color: #666;
-  line-height: 1.6;
-  padding-left: 2rem;
-  font-style: italic;
-}
-
-.testimonial-author {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.testimonial-author img {
+  top: 50%;
+  transform: translateY(-50%);
+  background: #C8102E;
+  border: none;
+  border-radius: 50%;
   width: 50px;
   height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.carousel-btn:hover {
+  background: #a60e24;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.carousel-btn-prev {
+  left: 0.5rem;
+}
+
+.carousel-btn-next {
+  right: 0.5rem;
+}
+
+/* 轮播指示器 */
+.carousel-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+.carousel-indicator {
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  object-fit: cover;
+  border: 2px solid #C8102E;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.author-details h4 {
-  margin: 0 0 0.25rem 0;
-  color: #333;
+.carousel-indicator.active {
+  background: #C8102E;
+  border-color: #C8102E;
+  transform: scale(1.2);
 }
 
-.author-details p {
-  margin: 0;
-  color: #666;
-  font-size: 0.9rem;
+.carousel-indicator:hover {
+  background: rgba(200, 16, 46, 0.2);
 }
 
 /* 响应式设计 */
@@ -748,12 +663,45 @@ export default {
     right: auto;
   }
   
-  .team-grid,
-  .partners-grid,
-  .stats-grid,
-  .philosophy-content,
-  .testimonials-slider {
+  .team-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .partners-carousel {
+    max-width: 90%;
+  }
+  
+  .carousel-slide {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .partner-item {
+    padding: 1.5rem;
+  }
+  
+  .partner-item img {
+    max-width: 150px;
+    max-height: 80px;
+  }
+  
+  .partner-item p {
+    font-size: 1rem;
+  }
+  
+  .carousel-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+  
+  .carousel-indicators {
+    gap: 0.3rem;
+  }
+  
+  .carousel-indicator {
+    width: 8px;
+    height: 8px;
   }
 }
 </style>

@@ -15,6 +15,8 @@ import ProfilePage from '../views/ProfilePage.vue'
 import AdminPage from '../views/AdminPage.vue'
 import PostDetailPage from '../views/PostDetailPage.vue'
 import AiAssistantPage from '../views/AiAssistantPage.vue'
+import PoetryDigitalizationPage from '../views/PoetryDigitalizationPage.vue'
+import Architecture3DPage from '../views/Architecture3DPage.vue'
 
 const routes = [
   {
@@ -153,6 +155,22 @@ const routes = [
       requiresAuth: true
     },
     props: true
+  },
+  {
+    path: '/poetry-digitalization',
+    name: 'poetry-digitalization',
+    component: PoetryDigitalizationPage,
+    meta: {
+      title: '湖湘诗词数字化 - 湖湘文化数字化平台'
+    }
+  },
+  {
+    path: '/architecture-3d',
+    name: 'architecture-3d',
+    component: Architecture3DPage,
+    meta: {
+      title: '湖湘建筑3D模型 - 湖湘文化数字化平台'
+    }
   }
 ]
 

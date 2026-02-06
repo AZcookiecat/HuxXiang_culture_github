@@ -29,4 +29,22 @@ def create_app():
     app.register_blueprint(community_bp)
     app.register_blueprint(auth_bp)
     
+    # 注册全局异常处理器
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        # 记录错误日志
+        app.logger.error(f"Unhandled exception: {str(e)}", exc_info=True)
+        
+        # 返回JSON格式的错误响应
+        import traceback
+        return {"error": "服务器内部错误", "details": str(e)}, 500
+    
+    # 注册shell上下文处理器
+    @app.shell_context_processor
+    def make_shell_context():
+        from models.user import User
+        from models.cultural_resource import CulturalResource
+        from models.community_post import CommunityPost
+        return {'db': db, 'User': User, 'CulturalResource': CulturalResource, 'CommunityPost': CommunityPost}
+    
     return app

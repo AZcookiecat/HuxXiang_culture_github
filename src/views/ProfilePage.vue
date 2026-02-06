@@ -50,8 +50,11 @@
           
           <div v-if="error" class="error-message">{{ error }}</div>
           <div v-if="success" class="success-message">{{ success }}</div>
+          <div v-if="loading" class="loading">保存中...</div>
           
-          <button type="submit" class="save-button">保存修改</button>
+          <button type="submit" class="save-button" :disabled="loading">
+            {{ loading ? '保存中...' : '保存修改' }}
+          </button>
         </form>
       </div>
     </div>
@@ -61,7 +64,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { updateUserProfile } from '../services/mockAuthService.js'
+import authService from '../services/authService.js'
 
 export default {
   name: 'ProfilePage',
@@ -72,6 +75,7 @@ export default {
     const avatarPreview = ref('')
     const error = ref('')
     const success = ref('')
+    const loading = ref(false)
 
     // 初始化用户信息
     const initUserInfo = () => {
@@ -83,8 +87,8 @@ export default {
           email: parsedUser.email,
           id: parsedUser.id
         }
-        // 设置头像预览
-        avatarPreview.value = getUserAvatar(parsedUser.username)
+        // 设置头像预览，优先使用已上传的头像
+        avatarPreview.value = parsedUser.avatar || getUserAvatar(parsedUser.username)
       } else {
         // 未登录，重定向到登录页
         router.push('/login')
@@ -139,17 +143,20 @@ export default {
       error.value = ''
       success.value = ''
       
+      if (loading.value) return; // 防止重复提交
+      
       // 简单验证
       if (!userInfo.value.username) {
         error.value = '昵称不能为空'
         return
       }
       
+      loading.value = true
+      
       try {
-        // 使用模拟更新服务
-        const response = await updateUserProfile(userInfo.value.id, {
+        // 使用真实的更新服务
+        const response = await authService.updateProfile({
           username: userInfo.value.username,
-          // 这里可以添加头像数据，如果支持的话
           avatar: avatarPreview.value
         })
         
@@ -157,18 +164,24 @@ export default {
           // 更新localStorage中的用户信息
           const updatedUser = {
             ...JSON.parse(localStorage.getItem('user')),
-            username: userInfo.value.username
+            username: userInfo.value.username,
+            avatar: avatarPreview.value
           }
           localStorage.setItem('user', JSON.stringify(updatedUser))
           
+          // 触发全局状态更新
+          window.dispatchEvent(new Event('login-success'))
+          
           // 显示成功消息
-          success.value = '个人资料更新成功'
+          success.value = response.message || '个人资料更新成功'
           setTimeout(() => { success.value = '' }, 3000)
         } else {
-          error.value = '更新失败，请稍后重试'
+          error.value = response.message || '更新失败，请稍后重试'
         }
       } catch (err) {
         error.value = err.message || '更新失败，请稍后重试'
+      } finally {
+        loading.value = false
       }
     }
 
@@ -183,6 +196,7 @@ export default {
       avatarPreview,
       error,
       success,
+      loading,
       triggerAvatarUpload,
       handleAvatarChange,
       handleUpdateProfile
@@ -200,7 +214,7 @@ export default {
   justify-content: center;
   align-items: center;
   padding: 2rem;
-  background: linear-gradient(135deg, #C8102E 0%, #8B0000 100%);
+  background: linear-gradient(135deg, #C8102E 0%, #8B0000 100%); /* 使用湖湘文化特色红色系 */
   position: relative;
   overflow: hidden;
 }
@@ -301,18 +315,20 @@ export default {
 }
 
 .avatar-upload-button {
-  background: #ecf0f1;
-  color: #34495e;
+  background: linear-gradient(135deg, #C8102E 0%, #8B0000 100%); /* 与湖湘文化主题一致 */
+  color: white;
   border: none;
   padding: 0.6rem 1.2rem;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: transform 0.2s, box-shadow 0.3s;
 }
 
 .avatar-upload-button:hover {
-  background: #bdc3c7;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(200, 16, 46, 0.4);
 }
 
 /* 个人资料表单 */
@@ -346,7 +362,7 @@ export default {
 .form-group input:focus {
   outline: none;
   border-color: #C8102E;
-  box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.1);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
 
 .form-group input[readonly] {
@@ -395,9 +411,18 @@ export default {
   margin-top: 1rem;
 }
 
-.save-button:hover {
+.save-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(200, 16, 46, 0.4);
+}
+
+.save-button:active {
+  transform: translateY(0);
+}
+
+.save-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .save-button:active {

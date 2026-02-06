@@ -15,6 +15,7 @@ import ProfilePage from '../views/ProfilePage.vue'
 import AdminPage from '../views/AdminPage.vue'
 import PostDetailPage from '../views/PostDetailPage.vue'
 import AiAssistantPage from '../views/AiAssistantPage.vue'
+import { isAuthenticated, isAdmin } from '../services/authService.js' // 导入认证服务
 
 const routes = [
   {
@@ -169,15 +170,15 @@ router.beforeEach((to, from, next) => {
   }
 
   // 检查用户是否已登录
-  const isAuthenticated = localStorage.getItem('user') !== null
-  const user = isAuthenticated ? JSON.parse(localStorage.getItem('user')) : null
+  const userIsAuthenticated = isAuthenticated()
+  const user = userIsAuthenticated ? JSON.parse(localStorage.getItem('user')) : null
 
   // 如果页面需要认证
   if (to.meta.requiresAuth) {
-    if (!isAuthenticated) {
+    if (!userIsAuthenticated) {
       // 未登录，跳转到登录页
       next({ name: 'login', query: { redirect: to.fullPath } })
-    } else if (to.meta.requiresAdmin && (!user || !user.isAdmin)) {
+    } else if (to.meta.requiresAdmin && !isAdmin()) {  // 使用authService的isAdmin函数
       // 需要管理员权限，但用户不是管理员
       next({ name: 'home' })
     } else {
@@ -186,7 +187,7 @@ router.beforeEach((to, from, next) => {
     }
   } else if (to.meta.guest) {
     // 如果是登录/注册页，已登录用户重定向到首页
-    if (isAuthenticated) {
+    if (userIsAuthenticated) {
       next({ name: 'home' })
     } else {
       next()

@@ -151,6 +151,25 @@ python app.py
 
 应用将在 `http://localhost:5000` 上运行。
 
+## 前后端联调配置
+
+在前端开发环境中，需要配置代理将API请求转发到后端服务。在前端项目的 [vite.config.js](file:///c:/Users/Lenovo/Desktop/HuxXiang_culture_github/vite.config.js) 中添加：
+
+```javascript
+export default defineConfig({
+  // ... 其他配置
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  }
+})
+```
+
 ## 数据模型
 
 ### 用户模型 (User)
@@ -206,11 +225,12 @@ python app.py
 - 代码遵循 PEP 8 规范
 - API 接口统一以 `/api` 为前缀
 - 错误处理返回结构化的错误信息
+- 在应用工厂模式下，SQLAlchemy实例通过`app.db = db`附加到应用实例，并在路由中使用`current_app.db`访问数据库实例
 
 ## 权限控制
 
-- 认证路由使用 `@jwt_required()` 装护器
-- 管理员操作需要验证用户角色
+- 认证路由使用 `@jwt_required()` 装饰器
+- 管理员权限通过检查 `user.role === 'admin'` 来验证
 - 用户只能编辑自己的内容（帖子、评论等）
 - 删除操作会检查权限和关联关系
 

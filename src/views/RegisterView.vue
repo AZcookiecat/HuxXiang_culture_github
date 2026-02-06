@@ -53,8 +53,11 @@
         
         <div v-if="error" class="error-message">{{ error }}</div>
         <div v-if="success" class="success-message">{{ success }}</div>
+        <div v-if="loading" class="loading">注册中...</div>
         
-        <button type="submit" class="register-button">注册</button>
+        <button type="submit" class="register-button" :disabled="loading">
+          {{ loading ? '注册中...' : '注册' }}
+        </button>
         
         <div class="login-link">
           <span>已有账号？</span>
@@ -68,7 +71,7 @@
 <script>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { mockRegister } from '../services/mockAuthService.js'
+import authService from '../services/authService.js'
 
 export default {
   name: 'RegisterView',
@@ -80,11 +83,14 @@ export default {
     const confirmPassword = ref('')
     const error = ref('')
     const success = ref('')
+    const loading = ref(false)
 
     // 处理注册
     const handleRegister = async () => {
       error.value = ''
       success.value = ''
+      
+      if (loading.value) return; // 防止重复提交
       
       // 简单验证
       if (!name.value || !email.value || !password.value || !confirmPassword.value) {
@@ -102,19 +108,26 @@ export default {
         return
       }
       
+      loading.value = true
+      
       try {
-        // 使用模拟注册
-        const response = await mockRegister(name.value, email.value, password.value)
+        const response = await authService.register(name.value, email.value, password.value)
         
-        // 显示成功消息
-        success.value = '注册成功！即将跳转到登录页面...'
-        
-        // 2秒后跳转到登录页面
-        setTimeout(() => {
-          router.push('/login')
-        }, 2000)
+        if (response.success) {
+          // 显示成功消息
+          success.value = response.message || '注册成功！即将跳转到登录页面...'
+          
+          // 2秒后跳转到登录页面
+          setTimeout(() => {
+            router.push('/login')
+          }, 2000)
+        } else {
+          error.value = response.message || '注册失败'
+        }
       } catch (err) {
         error.value = err.message || '注册失败，请稍后重试'
+      } finally {
+        loading.value = false
       }
     }
 
@@ -125,6 +138,7 @@ export default {
       confirmPassword,
       error,
       success,
+      loading,
       handleRegister
     }
   }
@@ -250,6 +264,16 @@ export default {
   border-left: 4px solid #27ae60;
 }
 
+/* 加载指示器 */
+.loading {
+  background-color: #e3f2fd;
+  color: #2196f3;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
 /* 注册按钮 */
 .register-button {
   background: linear-gradient(135deg, #1E40AF 0%, #0369A1 100%);
@@ -264,13 +288,18 @@ export default {
   margin-top: 1rem;
 }
 
-.register-button:hover {
+.register-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(30, 64, 175, 0.4);
 }
 
 .register-button:active {
   transform: translateY(0);
+}
+
+.register-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 /* 登录链接 */

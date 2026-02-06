@@ -4,7 +4,7 @@ from datetime import timedelta
 
 class Config:
     # 数据库配置 - 根据实际环境调整
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+pymysql://root:password@localhost/huxiang_culture'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+pymysql://root:qq123123@localhost/huxiang_culture?charset=utf8mb4'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # 密钥配置

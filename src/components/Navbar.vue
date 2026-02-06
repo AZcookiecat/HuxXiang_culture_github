@@ -30,7 +30,7 @@
             <a href="#" class="nav-link" :class="{ active: activeNavItem === 'about' }" @click.prevent="navigateTo('about')">关于我们</a>
           </li>
           <!-- 管理员页面导航项，只对管理员显示 -->
-          <li class="nav-item" v-if="isLoggedIn && user?.isAdmin">
+          <li class="nav-item" v-if="isLoggedIn && isAdmin">
             <a href="#" class="nav-link admin-link" :class="{ active: activeNavItem === 'admin' }" @click.prevent="navigateTo('admin')">管理中心</a>
           </li>
         </ul>
@@ -111,6 +111,11 @@ export default {
       return `https://picsum.photos/seed/${initial}${props.user.id}/100`;
     })
     
+    // 检查是否为管理员
+    const isAdmin = computed(() => {
+      return props.user?.role === 'admin';
+    })
+    
     // 计算当前激活的导航项
     const activeNavItem = computed(() => {
       return route.name
@@ -120,7 +125,8 @@ export default {
       isMenuOpen,
       toggleMenu,
       userAvatar,
-      activeNavItem
+      activeNavItem,
+      isAdmin
     }
   }
 }

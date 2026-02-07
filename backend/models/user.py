@@ -10,7 +10,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    avatar = db.Column(db.String(255))  # 头像路径
+    avatar = db.Column(db.String(2048))  # 头像路径，增加长度以适应base64编码
     bio = db.Column(db.Text)  # 个人简介
     role = db.Column(db.String(20), default='user')  # 角色: user, admin
     is_active = db.Column(db.Boolean, default=True)

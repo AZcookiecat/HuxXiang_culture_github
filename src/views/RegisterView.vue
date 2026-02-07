@@ -154,7 +154,7 @@ export default {
   justify-content: center;
   align-items: center;
   padding: 2rem;
-  background: linear-gradient(135deg, #1E40AF 0%, #0369A1 100%);
+  background: linear-gradient(135deg, #C8102E 0%, #8B0000 100%);
   position: relative;
   overflow: hidden;
 }
@@ -276,7 +276,7 @@ export default {
 
 /* 注册按钮 */
 .register-button {
-  background: linear-gradient(135deg, #1E40AF 0%, #0369A1 100%);
+  background: linear-gradient(135deg, #C8102E 0%, #8B0000 100%);
   color: white;
   border: none;
   padding: 1.1rem;
@@ -290,7 +290,7 @@ export default {
 
 .register-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(30, 64, 175, 0.4);
+  box-shadow: 0 6px 16px rgba(200, 16, 46, 0.4);
 }
 
 .register-button:active {
@@ -314,7 +314,7 @@ export default {
 }
 
 .login-link a {
-  color: #1E40AF;
+  color: #C8102E;
   text-decoration: none;
   font-weight: 600;
   margin-left: 0.3rem;
@@ -323,7 +323,7 @@ export default {
 
 .login-link a:hover {
   text-decoration: underline;
-  color: #0369A1;
+  color: #8B0000;
 }
 
 /* 响应式设计 - 增强多端适配 */
@@ -439,3 +439,4 @@ export default {
   }
 }
 </style>
+}

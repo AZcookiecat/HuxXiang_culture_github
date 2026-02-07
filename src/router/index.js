@@ -15,6 +15,8 @@ import ProfilePage from '../views/ProfilePage.vue'
 import AdminPage from '../views/AdminPage.vue'
 import PostDetailPage from '../views/PostDetailPage.vue'
 import AiAssistantPage from '../views/AiAssistantPage.vue'
+import EditPostPage from '../views/EditPostPage.vue'
+import CreatePostPage from '../views/CreatePostPage.vue'  // 导入新的创建帖子页面
 import { isAuthenticated, isAdmin } from '../services/authService.js' // 导入认证服务
 
 const routes = [
@@ -154,6 +156,25 @@ const routes = [
       requiresAuth: true
     },
     props: true
+  },
+  {
+    path: '/edit-post/:id',
+    name: 'edit-post',
+    component: EditPostPage,
+    meta: {
+      title: '编辑帖子 - 湖湘文化数字化平台',
+      requiresAuth: true
+    },
+    props: true
+  },
+  {
+    path: '/create-post',
+    name: 'create-post',
+    component: CreatePostPage,
+    meta: {
+      title: '发布新主题 - 湖湘文化数字化平台',
+      requiresAuth: true
+    }
   }
 ]
 

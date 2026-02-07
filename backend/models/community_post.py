@@ -2,6 +2,13 @@ from app import db
 from datetime import datetime
 
 
+# 用户点赞关联表
+user_likes_table = db.Table('user_post_likes',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('post_id', db.Integer, db.ForeignKey('community_posts.id'), primary_key=True)
+)
+
+
 class CommunityPost(db.Model):
     __tablename__ = 'community_posts'
 
@@ -19,6 +26,10 @@ class CommunityPost(db.Model):
 
     # 关联评论
     comments = db.relationship('Comment', backref='post', lazy=True, foreign_keys='Comment.post_id')
+
+    # 关联点赞用户
+    liked_users = db.relationship('User', secondary=user_likes_table, lazy='subquery',
+                                  backref=db.backref('liked_posts', lazy=True))
 
     def __repr__(self):
         return f'<CommunityPost {self.title}>'

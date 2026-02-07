@@ -101,8 +101,14 @@ export default {
       isMenuOpen.value = !isMenuOpen.value
     }
     
-    // 计算用户头像URL，使用用户名首字母或默认头像
+    // 计算用户头像URL，优先使用数据库中的头像URL，其次使用用户名首字母生成
     const userAvatar = computed(() => {
+      // 如果用户有自定义头像，则使用该头像
+      if (props.user?.avatar) {
+        return props.user.avatar;
+      }
+      
+      // 否则使用基于用户名首字母生成的头像
       if (!props.user?.username) {
         return `https://picsum.photos/seed/default/100`;
       }

@@ -91,6 +91,33 @@ export const updateProfile = async (userData) => {
   }
 };
 
+// 上传头像
+export const uploadAvatar = async (file) => {
+  try {
+    // 创建FormData对象
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    // 使用fetch API直接上传，因为涉及文件上传，不用通用request函数
+    const token = localStorage.getItem('access_token');
+    
+    const response = await fetch('/api/auth/upload-avatar', {
+      method: 'POST',
+      headers: {
+        // 注意：上传文件时不要设置Content-Type，让浏览器自动设置
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('上传头像错误:', error);
+    throw error;
+  }
+};
+
 export default {
   login,
   register,
@@ -98,5 +125,6 @@ export default {
   getCurrentUser,
   isAuthenticated,
   isAdmin,
-  updateProfile
+  updateProfile,
+  uploadAvatar
 };

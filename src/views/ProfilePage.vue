@@ -97,19 +97,11 @@ export default {
 
     // 获取用户头像（根据用户名生成）
     const getUserAvatar = (username) => {
-      // 使用Gravatar或其他头像服务的API，这里使用简单的字母头像生成
-      const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#F9DB6D', '#6A0572', '#AB83A1']
-      const colorIndex = username.charCodeAt(0) % colors.length
-      const avatarColor = colors[colorIndex]
+      // 使用与导航栏相同的头像生成服务
       const initial = username.charAt(0).toUpperCase()
-      // 生成简单的SVG头像
-      const svg = `data:image/svg+xml;base64,${btoa(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
-          <rect width="120" height="120" fill="${avatarColor}"/>
-          <text x="60" y="75" font-family="Arial, sans-serif" font-size="48" font-weight="bold" text-anchor="middle" fill="white">${initial}</text>
-        </svg>`
-      )}`
-      return svg
+      // 如果用户信息中有ID，则使用ID，否则仅使用用户名首字母
+      const userId = userInfo.value?.id ? userInfo.value.id : 'default'
+      return `https://picsum.photos/seed/${initial}${userId}/100`
     }
 
     // 触发头像上传
@@ -154,18 +146,42 @@ export default {
       loading.value = true
       
       try {
-        // 使用真实的更新服务
-        const response = await authService.updateProfile({
+        // 准备要发送的数据
+        const profileData = {
           username: userInfo.value.username,
-          avatar: avatarPreview.value
-        })
+        }
+        
+        // 检查头像是否是base64格式（意味着用户上传了新头像）
+        if (avatarPreview.value.startsWith('data:image')) {
+          // 将base64转换为文件并上传
+          const base64Response = await fetch(avatarPreview.value)
+          const blob = await base64Response.blob()
+          
+          // 创建一个文件对象
+          const file = new File([blob], `${userInfo.value.username}_avatar.jpg`, { type: 'image/jpeg' })
+          
+          // 上传头像文件
+          const uploadResponse = await authService.uploadAvatar(file)
+          
+          if (uploadResponse.success) {
+            profileData.avatar = uploadResponse.avatar_url
+          } else {
+            throw new Error(uploadResponse.message || '头像上传失败')
+          }
+        } else {
+          // 如果不是base64格式，说明是URL，直接使用当前值
+          profileData.avatar = avatarPreview.value
+        }
+        
+        // 使用真实的更新服务
+        const response = await authService.updateProfile(profileData)
         
         if (response.success) {
           // 更新localStorage中的用户信息
           const updatedUser = {
             ...JSON.parse(localStorage.getItem('user')),
             username: userInfo.value.username,
-            avatar: avatarPreview.value
+            avatar: profileData.avatar
           }
           localStorage.setItem('user', JSON.stringify(updatedUser))
           
@@ -542,4 +558,6 @@ export default {
     padding: 0.9rem;
   }
 }
+
+/* 确保所有CSS规则都正确闭合 */
 </style>

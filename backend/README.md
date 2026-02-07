@@ -44,7 +44,7 @@ backend/
 │   ├── auth.py             # 认证相关路由
 │   └── community.py        # 社区相关路由
 ├── app.py                  # 应用启动文件
-├── init_db.py              # 数据库初始化脚本
+├── init_db.py              # 数据库初始化脚本（包含点赞关联表创建）
 ├── requirements.txt        # 项目依赖
 └── README.md               # 项目说明文档
 ```
@@ -101,7 +101,7 @@ SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+pymysql://roo
 python init_db.py
 ```
 
-这将创建管理员账户（用户名：admin，密码：admin123）和示例文化资源。
+此脚本会创建所有必要的数据表，包括点赞关联表，以及管理员账户和示例数据。
 
 ## API 接口说明
 
@@ -128,9 +128,11 @@ python init_db.py
 - `POST /api/community/posts` - 发布新帖子（需要认证）
 - `PUT /api/community/posts/<id>` - 编辑帖子（需要认证且为本人或管理员）
 - `DELETE /api/community/posts/<id>` - 删除帖子（需要认证且为本人或管理员）
-- `POST /api/community/posts/<id>/like` - 给帖子点赞（需要认证）
-- `POST /api/community/comments` - 发表评论（需要认证）
+- `POST /api/community/posts/<id>/like` - 给帖子点赞/取消点赞（需要认证）
+- `GET /api/community/posts/<post_id>/comments` - 获取帖子评论列表
+- `POST /api/community/posts/<post_id>/comments` - 发表评论（需要认证）
 - `DELETE /api/community/comments/<id>` - 删除评论（需要认证且为本人或管理员）
+- `GET /api/community/posts/related/<post_id>` - 获取相关帖子推荐
 
 ## 环境变量配置
 
@@ -141,7 +143,88 @@ SECRET_KEY=your-secret-key
 JWT_SECRET_KEY=your-jwt-secret-key
 DATABASE_URL=mysql+pymysql://username:password@localhost/database_name
 DEV_DATABASE_URL=sqlite:///../instance/huxiang_culture_dev.db
+AVATAR_UPLOAD_PATH=/path/to/avatar/uploads  # 生产环境头像上传路径（可选）
 ```
+
+**部署环境必设变量**：
+- `DATABASE_URL`: 生产环境数据库连接字符串
+  - Linux: `export DATABASE_URL="mysql+pymysql://username:password@host:port/dbname"`
+  - Windows: `set DATABASE_URL=mysql+pymysql://username:password@host:port/dbname`
+- `SECRET_KEY`: 应用密钥，用于加密会话和JWT
+  - Linux: `export SECRET_KEY="your-production-secret-key"`
+  - Windows: `set SECRET_KEY=your-production-secret-key`
+
+**部署环境可选变量**：
+- `AVATAR_UPLOAD_PATH`: 指定头像文件存储路径，默认为项目根目录的public/static/avatars
+  - Linux: `export AVATAR_UPLOAD_PATH="/path/to/avatar/uploads"`
+  - Windows: `set AVATAR_UPLOAD_PATH=C:\path\to\avatar\uploads`
+  - （若未设置则使用默认路径）
+
+## 部署注意事项
+
+### 1. 服务器环境准备
+- 确保服务器已安装Python 3.10+、Node.js环境
+- 配置MySQL数据库（使用utf8mb4字符集）
+- 设置环境变量（DATABASE_URL、SECRET_KEY、AVATAR_UPLOAD_PATH）
+
+### 2. 文件上传目录设置
+- 如设置了AVATAR_UPLOAD_PATH，确保目录存在且有适当的写入权限
+- Linux示例：`sudo mkdir -p /var/www/uploads/avatars && sudo chmod 755 /var/www/uploads/avatars`
+- Windows示例：确保指定目录有写入权限
+
+### 3. 数据库初始化
+- 部署后运行 `python init_db.py` 初始化数据库表结构和示例数据
+- 此脚本会自动创建所有必要的数据表，包括点赞关联表，无需单独执行
+
+### 4. 服务部署
+- 使用Gunicorn运行后端服务：`gunicorn -w 4 -b 0.0.0.0:5000 app:app`
+- 前端使用Nginx提供静态文件服务
+- 配置Nginx反向代理将 `/api/` 请求转发到后端
+
+### 5. Nginx配置示例
+``nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    # 前端静态文件
+    location / {
+        root /path/to/frontend/dist;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API请求代理到Flask后端
+    location /api/ {
+        proxy_pass http://127.0.0.1:5000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 头像等静态文件
+    location /static/ {
+        alias /var/www/uploads/;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+### 6. 进程管理
+- 推荐使用systemd（Linux）或PM2（跨平台）管理进程
+- 配置自动启动和故障恢复机制
+
+### 7. 安全要求
+- 生产环境禁用调试模式
+- 不要在代码中硬编码敏感信息
+- 定期轮换SECRET_KEY
+- 限制文件上传类型和大小
+
+### 8. 维护要求
+- 定期备份数据库和上传文件目录
+- 监控服务器磁盘空间使用情况
+- 及时更新系统和软件包的安全补丁
 
 ## 运行项目
 
@@ -181,6 +264,7 @@ export default defineConfig({
 - avatar: 头像URL
 - role: 用户角色（user/admin）
 - created_at: 创建时间
+- updated_at: 更新时间
 
 ### 文化资源模型 (CulturalResource)
 - id: 资源唯一标识
@@ -202,11 +286,13 @@ export default defineConfig({
 - title: 标题
 - content: 内容
 - author_id: 作者ID（关联用户）
+- category: 分类
 - created_at: 创建时间
 - updated_at: 更新时间
-- views: 浏览量
-- likes_count: 点赞数
-- status: 状态（active/deleted）
+- view_count: 浏览量
+- like_count: 点赞数
+- comment_count: 评论数
+- status: 状态（published/deleted）
 
 ### 评论模型 (Comment)
 - id: 评论唯一标识
@@ -214,7 +300,9 @@ export default defineConfig({
 - post_id: 关联帖子ID
 - author_id: 作者ID（关联用户）
 - created_at: 创建时间
+- updated_at: 更新时间
 - parent_id: 回复的父评论ID（支持回复评论）
+- liked_users: 点赞用户关系（多对多关联用户表）
 
 ## 开发规范
 

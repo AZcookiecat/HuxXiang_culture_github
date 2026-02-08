@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import Navbar from './components/Navbar.vue'
 import { useRouter } from 'vue-router'
+import authService from './services/authService.js'
 
 export default {
   name: 'App',
@@ -51,24 +52,22 @@ export default {
     // 登出处理
     const handleLogout = async () => {
       try {
-        // 在实际环境中使用真实API
-        // await userAPI.logout();
-        
-        // 清除本地存储中的用户信息
-        localStorage.removeItem('user')
+        // 使用真实的登出服务
+        const result = await authService.logout();
         
         // 更新状态
         isLoggedIn.value = false
         user.value = null
         
         // 显示提示消息
-        showAlert('已成功登出！', 'info')
+        showAlert(result.message || '已成功登出！', 'info')
         
         // 重定向到首页
         router.push('/')
       } catch (error) {
         console.error('登出失败:', error)
         // 即使API调用失败，也将本地状态设置为未登录
+        localStorage.removeItem('access_token')
         localStorage.removeItem('user')
         isLoggedIn.value = false
         user.value = null
@@ -111,12 +110,11 @@ export default {
     // 检查用户登录状态
     const checkUserLoginStatus = () => {
       try {
-        // 从本地存储读取用户信息
-        const storedUser = localStorage.getItem('user')
-        if (storedUser) {
-          const userInfo = JSON.parse(storedUser)
-          isLoggedIn.value = true
-          user.value = userInfo
+        // 使用认证服务检查登录状态
+        const loggedIn = authService.isAuthenticated();
+        if (loggedIn) {
+          isLoggedIn.value = true;
+          user.value = authService.getCurrentUser();
         }
       } catch (error) {
         console.error('检查用户登录状态失败:', error)

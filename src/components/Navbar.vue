@@ -30,7 +30,7 @@
             <a href="#" class="nav-link" :class="{ active: activeNavItem === 'about' }" @click.prevent="navigateTo('about')">关于我们</a>
           </li>
           <!-- 管理员页面导航项，只对管理员显示 -->
-          <li class="nav-item" v-if="isLoggedIn && user?.isAdmin">
+          <li class="nav-item" v-if="isLoggedIn && isAdmin">
             <a href="#" class="nav-link admin-link" :class="{ active: activeNavItem === 'admin' }" @click.prevent="navigateTo('admin')">管理中心</a>
           </li>
         </ul>
@@ -101,14 +101,25 @@ export default {
       isMenuOpen.value = !isMenuOpen.value
     }
     
-    // 计算用户头像URL，使用用户名首字母或默认头像
+    // 计算用户头像URL，优先使用数据库中的头像URL，其次使用用户名首字母生成
     const userAvatar = computed(() => {
+      // 如果用户有自定义头像，则使用该头像
+      if (props.user?.avatar) {
+        return props.user.avatar;
+      }
+      
+      // 否则使用基于用户名首字母生成的头像
       if (!props.user?.username) {
         return `https://picsum.photos/seed/default/100`;
       }
       // 使用用户名首字母创建头像
       const initial = props.user.username.charAt(0).toUpperCase();
       return `https://picsum.photos/seed/${initial}${props.user.id}/100`;
+    })
+    
+    // 检查是否为管理员
+    const isAdmin = computed(() => {
+      return props.user?.role === 'admin';
     })
     
     // 计算当前激活的导航项
@@ -120,7 +131,8 @@ export default {
       isMenuOpen,
       toggleMenu,
       userAvatar,
-      activeNavItem
+      activeNavItem,
+      isAdmin
     }
   }
 }

@@ -30,8 +30,11 @@
         </div>
         
         <div v-if="error" class="error-message">{{ error }}</div>
+        <div v-if="loading" class="loading">登录中...</div>
         
-        <button type="submit" class="login-button">登录</button>
+        <button type="submit" class="login-button" :disabled="loading">
+          {{ loading ? '登录中...' : '登录' }}
+        </button>
         
         <div class="register-link">
           <span>还没有账号？</span>
@@ -46,7 +49,7 @@
 <script>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { mockLogin } from '../services/mockAuthService.js'
+import authService from '../services/authService.js'
 
 export default {
   name: 'LoginView',
@@ -55,10 +58,13 @@ export default {
     const usernameOrEmail = ref('')
     const password = ref('')
     const error = ref('')
+    const loading = ref(false)
 
     // 处理登录
     const handleLogin = async () => {
       error.value = ''
+      
+      if (loading.value) return; // 防止重复提交
       
       // 简单验证
       if (!usernameOrEmail.value || !password.value) {
@@ -66,24 +72,26 @@ export default {
         return
       }
       
+      loading.value = true
+      
       try {
-        // 使用模拟登录
-        const response = await mockLogin(usernameOrEmail.value, password.value)
+        const response = await authService.login(usernameOrEmail.value, password.value)
         
         if (response.success) {
-          // 存储用户信息到localStorage
-          localStorage.setItem('user', JSON.stringify(response.user))
-          
           // 触发登录成功事件，通知App.vue更新状态
           window.dispatchEvent(new Event('login-success'))
           
-          // 登录成功后跳转到首页
-          router.push('/')
+          // 获取重定向路径，如果有的话
+          const redirect = router.currentRoute.value.query.redirect || '/'
+          // 登录成功后跳转
+          router.push(redirect)
         } else {
-          error.value = '用户名/邮箱或密码错误'
+          error.value = response.message || '登录失败'
         }
       } catch (err) {
         error.value = err.message || '登录失败，请稍后重试'
+      } finally {
+        loading.value = false
       }
     }
 
@@ -91,6 +99,7 @@ export default {
       usernameOrEmail,
       password,
       error,
+      loading,
       handleLogin
     }
   }
@@ -205,6 +214,16 @@ export default {
   border-left: 4px solid #e74c3c;
 }
 
+/* 加载指示器 */
+.loading {
+  background-color: #e3f2fd;
+  color: #2196f3;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
 /* 登录按钮 */
 .login-button {
   background: linear-gradient(135deg, #C8102E 0%, #8B0000 100%);
@@ -219,9 +238,14 @@ export default {
   margin-top: 1rem;
 }
 
-.login-button:hover {
+.login-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(200, 16, 46, 0.4);
+}
+
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .login-button:active {

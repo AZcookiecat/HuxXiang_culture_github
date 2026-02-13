@@ -17,6 +17,10 @@ import PostDetailPage from '../views/PostDetailPage.vue'
 import AiAssistantPage from '../views/AiAssistantPage.vue'
 import PoetryDigitalizationPage from '../views/PoetryDigitalizationPage.vue'
 import Architecture3DPage from '../views/Architecture3DPage.vue'
+import EditPostPage from '../views/EditPostPage.vue'
+import CreatePostPage from '../views/CreatePostPage.vue'  // 导入新的创建帖子页面
+import { isAuthenticated, isAdmin } from '../services/authService.js' // 导入认证服务
+
 
 const routes = [
   {
@@ -157,6 +161,25 @@ const routes = [
     props: true
   },
   {
+    path: '/edit-post/:id',
+    name: 'edit-post',
+    component: EditPostPage,
+    meta: {
+      title: '编辑帖子 - 湖湘文化数字化平台',
+      requiresAuth: true
+    },
+    props: true
+  },
+  {
+    path: '/create-post',
+    name: 'create-post',
+    component: CreatePostPage,
+    meta: {
+      title: '发布新主题 - 湖湘文化数字化平台',
+      requiresAuth: true
+    }
+  },
+  {
     path: '/poetry-digitalization',
     name: 'poetry-digitalization',
     component: PoetryDigitalizationPage,
@@ -187,15 +210,15 @@ router.beforeEach((to, from, next) => {
   }
 
   // 检查用户是否已登录
-  const isAuthenticated = localStorage.getItem('user') !== null
-  const user = isAuthenticated ? JSON.parse(localStorage.getItem('user')) : null
+  const userIsAuthenticated = isAuthenticated()
+  const user = userIsAuthenticated ? JSON.parse(localStorage.getItem('user')) : null
 
   // 如果页面需要认证
   if (to.meta.requiresAuth) {
-    if (!isAuthenticated) {
+    if (!userIsAuthenticated) {
       // 未登录，跳转到登录页
       next({ name: 'login', query: { redirect: to.fullPath } })
-    } else if (to.meta.requiresAdmin && (!user || !user.isAdmin)) {
+    } else if (to.meta.requiresAdmin && !isAdmin()) {  // 使用authService的isAdmin函数
       // 需要管理员权限，但用户不是管理员
       next({ name: 'home' })
     } else {
@@ -204,7 +227,7 @@ router.beforeEach((to, from, next) => {
     }
   } else if (to.meta.guest) {
     // 如果是登录/注册页，已登录用户重定向到首页
-    if (isAuthenticated) {
+    if (userIsAuthenticated) {
       next({ name: 'home' })
     } else {
       next()

@@ -15,9 +15,12 @@ import ProfilePage from '../views/ProfilePage.vue'
 import AdminPage from '../views/AdminPage.vue'
 import PostDetailPage from '../views/PostDetailPage.vue'
 import AiAssistantPage from '../views/AiAssistantPage.vue'
+import PoetryDigitalizationPage from '../views/PoetryDigitalizationPage.vue'
+import Architecture3DPage from '../views/Architecture3DPage.vue'
 import EditPostPage from '../views/EditPostPage.vue'
 import CreatePostPage from '../views/CreatePostPage.vue'  // 导入新的创建帖子页面
 import { isAuthenticated, isAdmin } from '../services/authService.js' // 导入认证服务
+
 
 const routes = [
   {
@@ -174,6 +177,22 @@ const routes = [
     meta: {
       title: '发布新主题 - 湖湘文化数字化平台',
       requiresAuth: true
+    }
+  },
+  {
+    path: '/poetry-digitalization',
+    name: 'poetry-digitalization',
+    component: PoetryDigitalizationPage,
+    meta: {
+      title: '湖湘诗词数字化 - 湖湘文化数字化平台'
+    }
+  },
+  {
+    path: '/architecture-3d',
+    name: 'architecture-3d',
+    component: Architecture3DPage,
+    meta: {
+      title: '湖湘建筑3D模型 - 湖湘文化数字化平台'
     }
   }
 ]

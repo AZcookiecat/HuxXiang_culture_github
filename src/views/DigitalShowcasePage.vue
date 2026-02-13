@@ -1,4 +1,4 @@
-<template>
+      <template>
   <div class="digital-showcase-page">
     <!-- 主标题区域 -->
     <div class="section-title">
@@ -23,7 +23,7 @@
         </div>
         
         <div class="showcase-item">
-          <router-link to="/unity" class="showcase-link">
+          <router-link to="/unity-webgl" class="showcase-link">
             <div class="showcase-icon">
               <i class="fas fa-vr-cardboard fa-3x"></i>
             </div>
@@ -59,7 +59,7 @@
       <h3 class="category-title">数字博物馆</h3>
       <div class="showcase-grid">
         <div class="showcase-item">
-          <router-link to="/unity">
+          <router-link to="/unity-webgl">
             <div class="showcase-icon">
               <i class="fas fa-museum fa-3x"></i>
             </div>
@@ -128,20 +128,20 @@
         <h3 class="category-title">特色专题</h3>
         <div class="topics-container">
           <div class="topic-card">
-            <img src="https://picsum.photos/seed/huxiangpoetry/600/400" alt="湖湘诗词数字化" class="topic-image">
+            <img src="/src/assets/Imgs/岳阳楼记1.jpg" alt="湖湘诗词数字化" class="topic-image">
             <div class="topic-content">
               <h4>湖湘诗词数字化</h4>
               <p>数字化呈现湖湘地区经典诗词作品，配合注释和朗诵音频</p>
-              <button class="topic-btn" @click="showAlert('湖湘诗词数字化专题即将上线！')">了解更多</button>
+              <button class="topic-btn" @click="goToPage('poetry-digitalization')">了解更多</button>
             </div>
           </div>
           
           <div class="topic-card">
-            <img src="https://picsum.photos/seed/huxiangarchitecture/600/400" alt="湖湘建筑3D模型" class="topic-image">
+            <img src="/src/assets/Imgs/岳麓书院1.jpg" alt="湖湘建筑3D模型" class="topic-image">
             <div class="topic-content">
               <h4>湖湘建筑3D模型</h4>
               <p>探索湖湘地区特色建筑的精细3D模型，了解建筑结构和文化内涵</p>
-              <button class="topic-btn" @click="showAlert('湖湘建筑3D模型专题即将上线！')">了解更多</button>
+              <button class="topic-btn" @click="goToPage('architecture-3d')">了解更多</button>
             </div>
           </div>
         </div>
@@ -166,6 +166,11 @@ const showAlert = (message, type = 'info') => {
     // 如果没有eventBus，不显示任何弹窗，只在控制台打印消息
     console.log(`[${type}] ${message}`)
   }
+}
+
+// 跳转到指定页面
+const goToPage = (pageName) => {
+  router.push({ name: pageName })
 }
 </script>
 

@@ -22,27 +22,27 @@
           <h4>分类导航</h4>
         </div>
         <ul class="menu-items">
-          <li class="menu-item active" @click="selectCategory('文化问答')">
+          <li class="menu-item" :class="{ active: currentCategory === '文化问答' }" @click="selectCategory('文化问答')">
             <i class="fas fa-question-circle"></i>
             <span>文化问答</span>
           </li>
-          <li class="menu-item" @click="selectCategory('历史人物')">
+          <li class="menu-item" :class="{ active: currentCategory === '历史人物' }" @click="selectCategory('历史人物')">
             <i class="fas fa-user-circle"></i>
             <span>历史人物</span>
           </li>
-          <li class="menu-item" @click="selectCategory('文化遗产')">
+          <li class="menu-item" :class="{ active: currentCategory === '文化遗产' }" @click="selectCategory('文化遗产')">
             <i class="fas fa-university"></i>
             <span>文化遗产</span>
           </li>
-          <li class="menu-item" @click="selectCategory('传统习俗')">
+          <li class="menu-item" :class="{ active: currentCategory === '传统习俗' }" @click="selectCategory('传统习俗')">
             <i class="fas fa-calendar-alt"></i>
             <span>传统习俗</span>
           </li>
-          <li class="menu-item" @click="selectCategory('湖湘美食')">
+          <li class="menu-item" :class="{ active: currentCategory === '湖湘美食' }" @click="selectCategory('湖湘美食')">
             <i class="fas fa-utensils"></i>
             <span>湖湘美食</span>
           </li>
-          <li class="menu-item" @click="selectCategory('旅游景点')">
+          <li class="menu-item" :class="{ active: currentCategory === '旅游景点' }" @click="selectCategory('旅游景点')">
             <i class="fas fa-map-marker-alt"></i>
             <span>旅游景点</span>
           </li>

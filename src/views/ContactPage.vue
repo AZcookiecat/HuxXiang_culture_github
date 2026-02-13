@@ -271,7 +271,7 @@ export default {
 }
 
 .page-header {
-  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://picsum.photos/seed/contact/1920/400');
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../assets/Imgs/湖湘文化.png');
   background-size: cover;
   background-position: center;
   color: white;
@@ -781,7 +781,7 @@ export default {
 /* 合作咨询样式 */
 .cooperation-section {
   margin: 3rem 0;
-  background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://picsum.photos/seed/cooperation/1920/400');
+  background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('../assets/Imgs/衡山1.jpeg');
   background-size: cover;
   background-position: center;
   color: white;

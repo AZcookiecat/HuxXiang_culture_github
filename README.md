@@ -165,7 +165,7 @@ app.config.globalProperties.$eventBus = app
 
 1. 安装Python和pip
 2. 安装依赖：`pip install -r requirements.txt`
-3. 运行应用：`python run.py`
+3. 运行应用：`python app.py`
 
 ## 结语
 

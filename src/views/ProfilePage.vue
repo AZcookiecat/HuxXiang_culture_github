@@ -50,8 +50,11 @@
           
           <div v-if="error" class="error-message">{{ error }}</div>
           <div v-if="success" class="success-message">{{ success }}</div>
+          <div v-if="loading" class="loading">保存中...</div>
           
-          <button type="submit" class="save-button">保存修改</button>
+          <button type="submit" class="save-button" :disabled="loading">
+            {{ loading ? '保存中...' : '保存修改' }}
+          </button>
         </form>
       </div>
     </div>
@@ -61,7 +64,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { updateUserProfile } from '../services/mockAuthService.js'
+import authService from '../services/authService.js'
 
 export default {
   name: 'ProfilePage',
@@ -72,6 +75,7 @@ export default {
     const avatarPreview = ref('')
     const error = ref('')
     const success = ref('')
+    const loading = ref(false)
 
     // 初始化用户信息
     const initUserInfo = () => {
@@ -83,8 +87,8 @@ export default {
           email: parsedUser.email,
           id: parsedUser.id
         }
-        // 设置头像预览
-        avatarPreview.value = getUserAvatar(parsedUser.username)
+        // 设置头像预览，优先使用已上传的头像
+        avatarPreview.value = parsedUser.avatar || getUserAvatar(parsedUser.username)
       } else {
         // 未登录，重定向到登录页
         router.push('/login')
@@ -93,19 +97,11 @@ export default {
 
     // 获取用户头像（根据用户名生成）
     const getUserAvatar = (username) => {
-      // 使用Gravatar或其他头像服务的API，这里使用简单的字母头像生成
-      const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#F9DB6D', '#6A0572', '#AB83A1']
-      const colorIndex = username.charCodeAt(0) % colors.length
-      const avatarColor = colors[colorIndex]
+      // 使用与导航栏相同的头像生成服务
       const initial = username.charAt(0).toUpperCase()
-      // 生成简单的SVG头像
-      const svg = `data:image/svg+xml;base64,${btoa(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
-          <rect width="120" height="120" fill="${avatarColor}"/>
-          <text x="60" y="75" font-family="Arial, sans-serif" font-size="48" font-weight="bold" text-anchor="middle" fill="white">${initial}</text>
-        </svg>`
-      )}`
-      return svg
+      // 如果用户信息中有ID，则使用ID，否则仅使用用户名首字母
+      const userId = userInfo.value?.id ? userInfo.value.id : 'default'
+      return `https://picsum.photos/seed/${initial}${userId}/100`
     }
 
     // 触发头像上传
@@ -139,36 +135,69 @@ export default {
       error.value = ''
       success.value = ''
       
+      if (loading.value) return; // 防止重复提交
+      
       // 简单验证
       if (!userInfo.value.username) {
         error.value = '昵称不能为空'
         return
       }
       
+      loading.value = true
+      
       try {
-        // 使用模拟更新服务
-        const response = await updateUserProfile(userInfo.value.id, {
+        // 准备要发送的数据
+        const profileData = {
           username: userInfo.value.username,
-          // 这里可以添加头像数据，如果支持的话
-          avatar: avatarPreview.value
-        })
+        }
+        
+        // 检查头像是否是base64格式（意味着用户上传了新头像）
+        if (avatarPreview.value.startsWith('data:image')) {
+          // 将base64转换为文件并上传
+          const base64Response = await fetch(avatarPreview.value)
+          const blob = await base64Response.blob()
+          
+          // 创建一个文件对象
+          const file = new File([blob], `${userInfo.value.username}_avatar.jpg`, { type: 'image/jpeg' })
+          
+          // 上传头像文件
+          const uploadResponse = await authService.uploadAvatar(file)
+          
+          if (uploadResponse.success) {
+            profileData.avatar = uploadResponse.avatar_url
+          } else {
+            throw new Error(uploadResponse.message || '头像上传失败')
+          }
+        } else {
+          // 如果不是base64格式，说明是URL，直接使用当前值
+          profileData.avatar = avatarPreview.value
+        }
+        
+        // 使用真实的更新服务
+        const response = await authService.updateProfile(profileData)
         
         if (response.success) {
           // 更新localStorage中的用户信息
           const updatedUser = {
             ...JSON.parse(localStorage.getItem('user')),
-            username: userInfo.value.username
+            username: userInfo.value.username,
+            avatar: profileData.avatar
           }
           localStorage.setItem('user', JSON.stringify(updatedUser))
           
+          // 触发全局状态更新
+          window.dispatchEvent(new Event('login-success'))
+          
           // 显示成功消息
-          success.value = '个人资料更新成功'
+          success.value = response.message || '个人资料更新成功'
           setTimeout(() => { success.value = '' }, 3000)
         } else {
-          error.value = '更新失败，请稍后重试'
+          error.value = response.message || '更新失败，请稍后重试'
         }
       } catch (err) {
         error.value = err.message || '更新失败，请稍后重试'
+      } finally {
+        loading.value = false
       }
     }
 
@@ -183,6 +212,7 @@ export default {
       avatarPreview,
       error,
       success,
+      loading,
       triggerAvatarUpload,
       handleAvatarChange,
       handleUpdateProfile
@@ -200,7 +230,7 @@ export default {
   justify-content: center;
   align-items: center;
   padding: 2rem;
-  background: linear-gradient(135deg, #C8102E 0%, #8B0000 100%);
+  background: linear-gradient(135deg, #C8102E 0%, #8B0000 100%); /* 使用湖湘文化特色红色系 */
   position: relative;
   overflow: hidden;
 }
@@ -301,18 +331,20 @@ export default {
 }
 
 .avatar-upload-button {
-  background: #ecf0f1;
-  color: #34495e;
+  background: linear-gradient(135deg, #C8102E 0%, #8B0000 100%); /* 与湖湘文化主题一致 */
+  color: white;
   border: none;
   padding: 0.6rem 1.2rem;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: transform 0.2s, box-shadow 0.3s;
 }
 
 .avatar-upload-button:hover {
-  background: #bdc3c7;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(200, 16, 46, 0.4);
 }
 
 /* 个人资料表单 */
@@ -346,7 +378,7 @@ export default {
 .form-group input:focus {
   outline: none;
   border-color: #C8102E;
-  box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.1);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
 
 .form-group input[readonly] {
@@ -395,9 +427,18 @@ export default {
   margin-top: 1rem;
 }
 
-.save-button:hover {
+.save-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(200, 16, 46, 0.4);
+}
+
+.save-button:active {
+  transform: translateY(0);
+}
+
+.save-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .save-button:active {
@@ -517,4 +558,6 @@ export default {
     padding: 0.9rem;
   }
 }
+
+/* 确保所有CSS规则都正确闭合 */
 </style>

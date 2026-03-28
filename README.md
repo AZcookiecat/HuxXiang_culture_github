@@ -1,172 +1,366 @@
 # 湖湘文化数字化平台
 
-## 项目概述
+[![Vue 3](https://img.shields.io/badge/Vue-3.5.21-42b883?style=flat&logo=vue.js)](https://vuejs.org)
+[![Flask](https://img.shields.io/badge/Flask-2.3.3-000000?style=flat&logo=flask)](https://flask.palletsprojects.com)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-00758F?style=flat&logo=mysql)](https://www.mysql.com)
 
-湖湘文化数字化平台是一个致力于通过数字化手段展示、传播和传承湖湘文化精髓的综合性Web应用。该项目旨在利用现代信息技术，将湖湘地区丰富的历史文化遗产、民俗风情、传统艺术等资源进行数字化呈现，促进文化的保护与传承，同时为用户提供便捷的文化资源获取和互动交流平台。
+## 项目简介
 
-## 项目结构
+湖湘文化数字化平台是一个致力于通过数字化手段展示、传播和传承湖湘文化精髓的综合性 Web 应用。项目采用前后端分离架构，前端使用 Vue 3 + Vite 构建，后端使用 Flask + SQLAlchemy，提供文化资源展示、社区互动、知识图谱、AI 助手等功能。
 
-项目采用前后端分离的架构设计，分为两个主要部分：
+## 核心功能
 
-1. **HuXiang_github**：基于Vue 3的前端项目
-2. **HX_project**：基于Flask的后端项目
+| 功能模块 | 说明 |
+|---------|------|
+| 🏠 首页 | 平台门户，核心功能入口 |
+| 📚 文化资源库 | 湖湘文化资源展示（历史遗迹、传统艺术、诗词、美食等） |
+| 💬 互动社区 | 用户发帖、评论、点赞 |
+| 🕸️ 知识图谱 | 文化元素关联可视化 |
+| 🎮 数字化展示 | Unity WebGL 3D 体验 |
+| 🤖 AI 助手 | 智能问答服务 |
+| 👤 用户系统 | 登录注册、个人中心 |
+| ⚙️ 管理后台 | 内容管理、用户管理 |
 
 ## 技术栈
 
-### 前端技术栈
+### 前端技术
 
-| 技术/框架 | 版本 | 用途 |
-|---------|------|------|
-| Vue.js | 3.5.21 | 前端框架，用于构建用户界面和组件化开发 |
-| Vue Router | 4.5.1 | 前端路由管理，实现页面间的导航和参数传递 |
-| Vite | 7.1.7 | 现代化前端构建工具，提供快速的开发体验和优化的构建输出 |
-| Font Awesome | 7.0.1 | 图标库，提供丰富的图标资源用于界面设计 |
-| 原生CSS | - | 样式设计，实现响应式布局和界面美化 |
-| Unity WebGL | - | 3D内容展示，用于数字化展示部分 |
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| Vue.js | ^3.5.21 | 渐进式前端框架 |
+| Vue Router | ^4.5.1 | 客户端路由 |
+| Vite | ^7.1.7 | 现代化构建工具 |
+| Font Awesome | ^7.0.1 | 图标库 |
 
-### 后端技术栈
+### 后端技术
 
-| 技术/框架 | 版本 | 用途 |
-|---------|------|------|
-| Flask | - | Python Web框架，提供后端API服务 |
-| Flask-SQLAlchemy | 3.0.5 | ORM框架，简化数据库操作 |
-| PyMySQL | 1.1.0 | MySQL数据库驱动，用于数据库连接和操作 |
-| Werkzeug | 2.3.7 | WSGI工具库，提供Web服务器网关接口实现 |
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| Flask | 2.3.3 | Python Web 框架 |
+| Flask-SQLAlchemy | 3.0.5 | ORM 数据库操作 |
+| Flask-CORS | 4.0.0 | 跨域资源共享 |
+| Flask-JWT-Extended | 4.5.3 | JWT 身份认证 |
+| PyMySQL | 1.1.0 | MySQL 数据库驱动 |
+| Werkzeug | 2.3.7 | WSGI 工具库 |
 
-## 功能模块
-
-### 1. 首页模块
-
-作为平台的门户，展示平台的核心功能入口和最新文化资源推荐，提供全局导航和搜索功能。
-
-### 2. 文化资源库模块
-
-集中展示湖湘地区的各类文化资源，包括历史遗迹、传统艺术、文学作品、民俗风情、饮食文化、建筑风格、宗教文化、历史伟人事迹等。支持按分类浏览、关键词搜索和分页展示功能。
-
-资源数据结构：
-- 标题、描述、分类、图片URL、创建日期
-
-### 3. 互动社区模块
-
-提供用户交流互动的平台，支持用户发布、浏览和评论文化相关的帖子和讨论。该模块需要用户登录才能访问。
-
-### 4. 数字化展示模块
-
-利用Unity WebGL技术实现文化资源的3D展示和互动体验，为用户提供沉浸式的文化体验。
-
-### 5. 知识图谱模块
-
-可视化展示湖湘文化元素之间的关联关系，帮助用户更好地理解和探索湖湘文化的内在联系。
-
-### 6. 用户认证与管理模块
-
-- **登录/注册**：支持用户通过用户名/邮箱和密码进行登录和注册
-- **个人资料**：用户可以查看和管理个人信息
-- **权限控制**：区分普通用户和管理员权限
-
-### 7. 管理员模块
-
-提供后台管理功能，支持管理员对文化资源、用户和社区内容进行管理和维护
-
-### 3. 互动社区模块
-
-提供用户交流互动的平台，支持用户发布、浏览和评论文化相关的帖子和讨论。该模块需要用户登录才能访问。
-
-### 4. 数字化展示模块
-
-利用Unity WebGL技术实现文化资源的3D展示和互动体验，为用户提供沉浸式的文化体验。
-
-### 5. 知识图谱模块
-
-可视化展示湖湘文化元素之间的关联关系，帮助用户更好地理解和探索湖湘文化的内在联系。
-
-### 6. 用户认证与管理模块
-
-- **登录/注册**：支持用户通过用户名/邮箱和密码进行登录和注册
-- **个人资料**：用户可以查看和管理个人信息
-- **权限控制**：区分普通用户和管理员权限
-
-
-
-### 7. 管理员模块
-
-提供后台管理功能，支持管理员对文化资源、用户和社区内容进行管理和维护。
-
-## 前端项目结构
+## 项目结构
 
 ```
-src/
-├── assets/         # 静态资源文件
-│   ├── css/        # 样式文件
-│   └── imgs/       # 图片文件
-├── components/     # Vue组件
-├── views/          # 页面组件
-├── services/       # 服务层，处理API请求和业务逻辑
-├── router/         # 路由配置
-├── App.vue         # 根组件
-└── main.js         # 应用入口文件
+HuXiang_culture/
+│
+├── src/                          # 前端 Vue 项目
+│   ├── assets/                   # 静态资源
+│   │   ├── css/                  # 样式文件
+│   │   └── imgs/                 # 图片资源
+│   ├── components/               # 公共组件
+│   │   └── CommentsSection.vue   # 评论组件
+│   ├── views/                    # 页面组件
+│   │   ├── HomePage.vue          # 首页
+│   │   ├── CommunityPage.vue     # 社区页
+│   │   ├── CreatePostPage.vue    # 发帖页
+│   │   ├── PostDetailPage.vue    # 帖子详情
+│   │   ├── CulturalResourcesPage.vue  # 文化资源
+│   │   ├── KnowledgeGraphPage.vue     # 知识图谱
+│   │   ├── LoginView.vue         # 登录
+│   │   ├── RegisterView.vue      # 注册
+│   │   └── ...                   # 其他页面
+│   ├── router/
+│   │   └── index.js              # 路由配置
+│   ├── services/
+│   │   ├── api.js                # API 服务
+│   │   └── authService.js        # 认证服务
+│   ├── main.js                   # 入口文件
+│   ├── App.vue                   # 根组件
+│   └── style.css                 # 全局样式
+│
+├── backend/                      # 后端 Flask 项目
+│   ├── models/                   # 数据模型
+│   │   ├── user.py               # 用户模型
+│   │   ├── community_post.py     # 帖子/评论模型
+│   │   └── cultural_resource.py  # 文化资源模型
+│   ├── routes/                   # API 路由
+│   │   ├── auth.py               # 认证路由
+│   │   ├── community.py          # 社区路由
+│   │   ├── cultural_resources.py  # 文化资源路由
+│   │   └── main.py               # 通用路由
+│   ├── app/
+│   │   └── __init__.py           # 应用初始化
+│   ├── app.py                    # 应用入口
+│   ├── config.py                  # 配置文件
+│   ├── init_db.py                 # 数据库初始化
+│   └── requirements.txt           # Python 依赖
+│
+├── public/                       # 公共静态资源
+│   └── unity-webgl/              # Unity WebGL 游戏
+│
+├── index.html                    # HTML 入口
+├── package.json                  # 前端依赖
+├── vite.config.js                # Vite 配置
+└── README.md                     # 项目文档
 ```
-<mcfile name="README.md" path="e:/Project_huxiangwenhua/HuXiang_github/README.md"></mcfile>
 
-## 核心页面组件
+## 环境要求
 
-| 页面组件 | 路径 | 功能描述 |
-|--------|------|---------|
-| HomePage | src/views/HomePage.vue | 平台首页，展示核心功能入口和推荐资源 |
-| CulturalResourcesPage | src/views/CulturalResourcesPage.vue | 文化资源库，展示各类湖湘文化资源 |
-| CommunityPage | src/views/CommunityPage.vue | 互动社区，提供用户交流平台 |
-| DigitalShowcasePage | src/views/DigitalShowcasePage.vue | 数字化展示，提供3D文化体验 |
-| AboutPage | src/views/AboutPage.vue | 关于我们，介绍平台的背景和宗旨 |
-| ContactPage | src/views/ContactPage.vue | 联系我们，提供联系方式和反馈渠道 |
-| ResourceDetailPage | src/views/ResourceDetailPage.vue | 资源详情，展示单个文化资源的详细信息 |
-| KnowledgeGraphPage | src/views/KnowledgeGraphPage.vue | 知识图谱，可视化展示文化元素关联 |
-| UnityWebGL | src/views/UnityWebGL.vue | Unity WebGL内容展示 |
-| LoginView/RegisterView | src/views/LoginView.vue/src/views/RegisterView.vue | 用户登录和注册页面 |
-| ProfilePage | src/views/ProfilePage.vue | 用户个人资料页面 |
-| AdminPage | src/views/AdminPage.vue | 管理员后台管理页面 |
+| 环境 | 要求 |
+|------|------|
+| Node.js | 16+ |
+| Python | 3.8+ |
+| MySQL | 8.0+ |
+| npm / pip | 最新版本 |
 
-<mcfile name="index.js" path="e:/Project_huxiangwenhua/HuXiang_github/src/router/index.js"></mcfile>
+## 快速开始
 
-## 特色功能
+### 1. 克隆项目
 
-### 1. 响应式设计
+```bash
+git clone <repository-url>
+cd HuXiang_culture
+```
 
-平台采用响应式设计，支持在不同尺寸的设备上提供良好的用户体验，包括桌面端、平板和移动设备。
+### 2. 前端配置
 
-### 2. 模拟数据服务
+```bash
+# 安装依赖
+npm install
 
-前端项目包含模拟数据服务，用于在后端API未完全开发时提供数据支持，确保前端功能可以正常演示和测试。
+# 启动开发服务器
+npm run dev
 
-### 3. 全局事件总线
+# 构建生产版本
+npm run build
+```
 
-实现了全局事件总线机制，方便组件间的通信和数据传递。
+前端服务启动后访问：`http://localhost:5173`
+
+### 3. 后端配置
+
+```bash
+# 进入后端目录
+cd backend
+
+# 创建虚拟环境（推荐）
+python -m venv venv
+
+# 激活虚拟环境
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 配置数据库
+# 修改 config.py 中的数据库连接信息
+# 默认: mysql+pymysql://root:password@localhost/huxiang_culture
+
+# 初始化数据库
+python init_db.py
+
+# 启动服务
+python app.py
+```
+
+后端服务启动后访问：`http://localhost:5000`
+
+### 4. 环境变量（可选）
+
+在 `backend/` 目录下创建 `.env` 文件：
+
+```env
+DATABASE_URL=mysql+pymysql://root:password@localhost/huxiang_culture
+SECRET_KEY=your-secret-key
+JWT_SECRET_KEY=your-jwt-secret-key
+```
+
+## API 接口文档
+
+### 认证接口 (auth)
+
+| 方法 | 路径 | 说明 | 认证 |
+|------|------|------|------|
+| POST | `/api/auth/register` | 用户注册 | 否 |
+| POST | `/api/auth/login` | 用户登录 | 否 |
+| GET | `/api/auth/profile` | 获取用户信息 | 是 |
+| PUT | `/api/auth/profile` | 更新用户信息 | 是 |
+| POST | `/api/auth/upload-avatar` | 上传头像 | 是 |
+| POST | `/api/auth/logout` | 登出 | 是 |
+
+### 文化资源接口 (cultural-resources)
+
+| 方法 | 路径 | 说明 | 认证 |
+|------|------|------|------|
+| GET | `/api/cultural-resources` | 获取资源列表 | 否 |
+| GET | `/api/cultural-resources/<id>` | 获取资源详情 | 否 |
+| POST | `/api/cultural-resources/<id>/like` | 点赞资源 | 是 |
+| POST | `/api/cultural-resources` | 创建资源 | 是(管理员) |
+
+### 社区帖子接口 (community)
+
+| 方法 | 路径 | 说明 | 认证 |
+|------|------|------|------|
+| GET | `/api/community/posts` | 获取帖子列表 | 否 |
+| GET | `/api/community/posts/<id>` | 获取帖子详情 | 否 |
+| POST | `/api/community/posts` | 发布帖子 | 是 |
+| PUT | `/api/community/posts/<id>` | 更新帖子 | 是 |
+| DELETE | `/api/community/posts/<id>` | 删除帖子 | 是 |
+| POST | `/api/community/posts/<id>/like` | 点赞帖子 | 是 |
+| GET | `/api/community/posts/<id>/comments` | 获取评论列表 | 否 |
+| POST | `/api/community/posts/<id>/comments` | 添加评论 | 是 |
+| DELETE | `/api/community/comments/<id>` | 删除评论 | 是 |
+
+### 通用接口 (main)
+
+| 方法 | 路径 | 说明 | 认证 |
+|------|------|------|------|
+| GET | `/` | 首页 | 否 |
+| GET | `/health` | 健康检查 | 否 |
+
+## 数据模型
+
+### User（用户）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | Integer | 主键 |
+| username | String | 用户名 |
+| email | String | 邮箱 |
+| password_hash | String | 密码哈希 |
+| avatar_url | String | 头像URL |
+| role | String | 角色(user/admin) |
+| created_at | DateTime | 创建时间 |
+
+### CommunityPost（帖子）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | Integer | 主键 |
+| title | String | 标题 |
+| content | Text | 内容 |
+| author_id | Integer | 作者ID |
+| category | String | 分类 |
+| status | String | 状态 |
+| view_count | Integer | 浏览量 |
+| like_count | Integer | 点赞数 |
+| comment_count | Integer | 评论数 |
+| created_at | DateTime | 创建时间 |
+
+### Comment（评论）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | Integer | 主键 |
+| content | Text | 内容 |
+| author_id | Integer | 作者ID |
+| post_id | Integer | 帖子ID |
+| parent_id | Integer | 父评论ID（支持嵌套） |
+| created_at | DateTime | 创建时间 |
+
+### CulturalResource（文化资源）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | Integer | 主键 |
+| title | String | 标题 |
+| description | Text | 描述 |
+| category | String | 分类 |
+| image_url | String | 图片URL |
+| created_at | DateTime | 创建时间 |
+
+## 使用示例
+
+### 前端 API 调用
 
 ```javascript
-// 全局事件总线 - 用于组件间通信
-app.config.globalProperties.$eventBus = app
+// 获取帖子列表
+import { get } from './services/api';
+
+const posts = await get('/community/posts');
+
+// 登录
+import { post } from './services/api';
+
+const result = await post('/auth/login', {
+  username: 'user123',
+  password: 'password123'
+});
+
+// 获取 token
+const token = result.access_token;
 ```
-<mcfile name="main.js" path="e:/Project_huxiangwenhua/HuXiang_github/src/main.js"></mcfile>
 
-## 项目意义
+### 后端模型查询
 
-湖湘文化数字化平台通过现代信息技术手段，为湖湘文化的保护、传承和传播提供了新的途径。该平台不仅可以促进湖湘文化的研究和交流，还可以增强公众对湖湘文化的认知和认同，对于推动湖湘文化的创新发展具有重要意义。
+```python
+from app import db
+from models.user import User
+from models.community_post import CommunityPost, Comment
 
-## 开发与部署
+# 查询用户
+user = User.query.filter_by(username='test').first()
 
-### 前端开发环境设置
+# 查询帖子及评论
+post = CommunityPost.query.get(1)
+comments = Comment.query.filter_by(post_id=1, parent_id=None).all()
 
-1. 安装Node.js 14.18+ 或 16+
-2. 克隆项目仓库
-3. 安装依赖：`npm install`
-4. 启动开发服务器：`npm run dev`
-5. 构建生产版本：`npm run build`
+# 创建帖子
+new_post = CommunityPost(
+    title='新帖子',
+    content='帖子内容',
+    author_id=user.id,
+    category='讨论'
+)
+db.session.add(new_post)
+db.session.commit()
+```
 
-### 后端开发环境设置
+## 开发规范
 
-1. 安装Python和pip
-2. 安装依赖：`pip install -r requirements.txt`
-3. 运行应用：`python app.py`
+### 前端规范
 
-## 结语
+- 使用 Vue 3 Composition API
+- 组件文件使用 PascalCase 命名
+- API 请求统一通过 `services/api.js` 封装
+- 样式使用原生 CSS 或 SCSS
 
-湖湘文化数字化平台是一个融合了现代信息技术和传统文化的创新项目，旨在通过数字化手段推动湖湘文化的保护、传承和发展。随着项目的不断完善和优化，相信该平台将为湖湘文化的传播和弘扬做出更大的贡献。
+### 后端规范
+
+- 遵循 Flask 蓝图画分路由
+- 使用 SQLAlchemy ORM 操作数据库
+- API 返回统一 JSON 格式
+- 需要认证的接口使用 JWT
+
+## 常见问题
+
+### Q: 前端无法连接后端？
+A: 检查后端是否启动在 `http://localhost:5000`，确认 CORS 配置正确。
+
+### Q: 数据库连接失败？
+A: 确认 MySQL 服务已启动，配置文件中用户名密码正确，数据库已创建。
+
+### Q: 如何切换到生产环境？
+A: 修改 `config.py` 中的数据库 URL，使用生产级服务器（如 Gunicorn）。
+
+## 贡献指南
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/xxx`)
+3. 提交更改 (`git commit -m 'Add xxx'`)
+4. 推送分支 (`git push origin feature/xxx`)
+5. 创建 Pull Request
+
+## 许可证
+
+本项目基于 MIT 许可证开源，详见 [LICENSE](LICENSE) 文件。
+
+## 联系方式
+
+- 项目作者：[作者名称]
+- 邮箱：[email@example.com]
+- GitHub：[https://github.com/your-repo](https://github.com/your-repo)
+
+---
+
+<p align="center">
+  湖湘文化数字化平台 | 致力于湖湘文化的保护与传承
+</p>

@@ -13,12 +13,10 @@ community_bp = Blueprint('community', __name__, url_prefix='/api/community')
 def get_posts():
     """获取帖子列表"""
     try:
-        page = request.args.get('page', 1, type=int)
+        cursor = request.args.get('cursor', type=int) # 游标分页
         limit = request.args.get('limit', 10, type=int)
         category = request.args.get('category')
         sort_by = request.args.get('sortBy', 'latest')  # 新增排序参数，默认为最新发布
-        
-        offset = (page - 1) * limit
         
         # 构建查询
         query = current_app.db.session.query(CommunityPost)
@@ -30,14 +28,45 @@ def get_posts():
         
         # 根据排序参数构建排序条件
         if sort_by == 'popular':  # 热门：按点赞数+评论数
-            query = query.order_by((CommunityPost.like_count + CommunityPost.comment_count).desc())
+            query = query.order_by((CommunityPost.like_count + CommunityPost.comment_count).desc(), CommunityPost.id.desc())
         elif sort_by == 'comments':  # 评论最多：按评论数
-            query = query.order_by(CommunityPost.comment_count.desc())
+            query = query.order_by(CommunityPost.comment_count.desc(), CommunityPost.id.desc())
         else:  # 默认按最新发布：按创建时间
-            query = query.order_by(CommunityPost.created_at.desc())
+            query = query.order_by(CommunityPost.created_at.desc(), CommunityPost.id.desc())
         
-        total = query.count()
-        posts = query.offset(offset).limit(limit).all()
+        # 游标分页：基于游标过滤
+        if cursor:
+            # 获取游标对应的帖子
+            cursor_post = current_app.db.session.get(CommunityPost, cursor)
+            if cursor_post:
+                if sort_by == 'popular':
+                    # 热门排序：分数比较逻辑
+                    cursor_score = cursor_post.like_count + cursor_post.comment_count
+                    query = query.filter(
+                        ((CommunityPost.like_count + CommunityPost.comment_count) < cursor_score) |
+                        (((CommunityPost.like_count + CommunityPost.comment_count) == cursor_score) & (CommunityPost.id < cursor))
+                    )
+                elif sort_by == 'comments':
+                    query = query.filter(
+                        (CommunityPost.comment_count < cursor_post.comment_count) |
+                        ((CommunityPost.comment_count == cursor_post.comment_count) & (CommunityPost.id < cursor))
+                    )
+                else:
+                    # 默认排序：按创建时间
+                    query = query.filter(
+                        (CommunityPost.created_at < cursor_post.created_at) |
+                        ((CommunityPost.created_at == cursor_post.created_at) & (CommunityPost.id < cursor))
+                    )
+        
+        # 多取一条用于判断是否有下一页
+        posts = query.limit(limit + 1).all()#这个函数是查询前limit+1条数据 
+        
+        # 判断是否有下一页
+        has_more = len(posts) > limit
+        posts = posts[:limit]  # 只保留实际需要的数据
+        
+        # 获取下一页游标
+        next_cursor = posts[-1].id if posts and has_more else None
         
         result = []
         for post in posts:
@@ -63,15 +92,13 @@ def get_posts():
             'success': True,
             'data': result,
             'pagination': {
-                'page': page,
+                'cursor': next_cursor,
                 'limit': limit,
-                'total': total,
-                'pages': math.ceil(total / limit)
+                'has_more': has_more
             }
         })
     except Exception as e:
         return jsonify({'message': '获取帖子列表失败: ' + str(e)}), 500
-
 
 @community_bp.route('/posts/<int:id>', methods=['GET'])
 def get_post(id):

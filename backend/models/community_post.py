@@ -4,11 +4,13 @@ from datetime import datetime
 
 # 用户点赞关联表
 user_likes_table = db.Table('user_post_likes',
-    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
-    db.Column('post_id', db.Integer, db.ForeignKey('community_posts.id'), primary_key=True)
+    db.Column('id', db.Integer, primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), nullable=False),
+    db.Column('post_id', db.Integer, db.ForeignKey('community_posts.id'), nullable=False),
+    db.UniqueConstraint('user_id', 'post_id', name='uq_user_post_like')
 )
 
-
+                                   
 class CommunityPost(db.Model):
     __tablename__ = 'community_posts'
 

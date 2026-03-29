@@ -3,6 +3,7 @@ package community
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"huxiang/backend/go_post_service/internal/app"
 
@@ -20,6 +21,7 @@ func NewHandler(service *Service, jwtSecret string) *Handler {
 
 func (h *Handler) Register(group *gin.RouterGroup) {
 	group.GET("/posts", h.ListPosts)
+	group.GET("/posts/mine", h.ListMyPosts)
 	group.GET("/posts/:id", h.GetPost)
 	group.POST("/posts", h.CreatePost)
 	group.PUT("/posts/:id", h.UpdatePost)
@@ -28,40 +30,82 @@ func (h *Handler) Register(group *gin.RouterGroup) {
 	group.GET("/posts/:postID/comments", h.ListComments)
 	group.POST("/posts/:postID/comments", h.AddComment)
 	group.GET("/posts/related/:postID", h.ListRelatedPosts)
+	group.GET("/categories", h.ListCategories)
 	group.DELETE("/comments/:commentID", h.DeleteComment)
 }
 
 func (h *Handler) ListPosts(c *gin.Context) {
-	posts, pagination, err := h.service.ListPosts(c.Request.Context(), ListPostsParams{
-		Cursor:   parseIntPointer(c.Query("cursor")),
-		Limit:    parseIntDefault(c.Query("limit"), 10),
-		Category: c.Query("category"),
-		SortBy:   c.DefaultQuery("sortBy", "latest"),
-	})
+	cursor, err := parseOptionalInt64(c.Query("cursor"))
 	if err != nil {
-		writeError(c, err)
+		app.AbortError(c, badRequest("cursor 参数格式错误"))
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "data": posts, "pagination": pagination})
+
+	posts, pagination, err := h.service.ListPosts(c.Request.Context(), ListPostsParams{
+		Cursor:   cursor,
+		Limit:    parseIntDefault(c.Query("limit"), defaultPageLimit),
+		Category: strings.TrimSpace(c.Query("category")),
+		SortBy:   c.Query("sortBy"),
+		Keyword:  strings.TrimSpace(c.Query("keyword")),
+	})
+	if err != nil {
+		app.AbortError(c, err)
+		return
+	}
+
+	app.SuccessWithPagination(c, http.StatusOK, posts, pagination)
+}
+
+func (h *Handler) ListMyPosts(c *gin.Context) {
+	userID, ok := requireUserID(c, h.jwtSecret)
+	if !ok {
+		return
+	}
+
+	cursor, err := parseOptionalInt64(c.Query("cursor"))
+	if err != nil {
+		app.AbortError(c, badRequest("cursor 参数格式错误"))
+		return
+	}
+
+	status, err := parsePostStatus(c.Query("status"))
+	if err != nil {
+		app.AbortError(c, err)
+		return
+	}
+
+	posts, pagination, err := h.service.ListUserPosts(c.Request.Context(), *userID, UserPostsParams{
+		Cursor: cursor,
+		Limit:  parseIntDefault(c.Query("limit"), defaultPageLimit),
+		Status: status,
+	})
+	if err != nil {
+		app.AbortError(c, err)
+		return
+	}
+
+	app.SuccessWithPagination(c, http.StatusOK, posts, pagination)
 }
 
 func (h *Handler) GetPost(c *gin.Context) {
-	postID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	postID, err := parsePathID(c, "id", "帖子 ID 格式错误")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "帖子ID无效"})
 		return
 	}
+
 	userID, err := app.ParseUserIDFromRequest(c.Request, h.jwtSecret)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"msg": "Invalid token"})
+		app.AbortError(c, &APIError{Status: http.StatusUnauthorized, Message: "登录信息无效", Err: err})
 		return
 	}
+
 	post, err := h.service.GetPost(c.Request.Context(), postID, userID)
 	if err != nil {
-		writeError(c, err)
+		app.AbortError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "data": post})
+
+	app.Success(c, http.StatusOK, post)
 }
 
 func (h *Handler) CreatePost(c *gin.Context) {
@@ -69,17 +113,20 @@ func (h *Handler) CreatePost(c *gin.Context) {
 	if !ok {
 		return
 	}
+
 	var req UpsertPostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "请求数据格式错误"})
+		app.AbortError(c, badRequest("请求体格式错误"))
 		return
 	}
+
 	post, err := h.service.CreatePost(c.Request.Context(), *userID, req)
 	if err != nil {
-		writeError(c, err)
+		app.AbortError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "帖子发布成功", "data": post})
+
+	app.SuccessWithMessage(c, http.StatusCreated, "帖子发布成功", post)
 }
 
 func (h *Handler) UpdatePost(c *gin.Context) {
@@ -87,22 +134,25 @@ func (h *Handler) UpdatePost(c *gin.Context) {
 	if !ok {
 		return
 	}
-	postID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+
+	postID, err := parsePathID(c, "id", "帖子 ID 格式错误")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "帖子ID无效"})
 		return
 	}
+
 	var req UpsertPostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "请求数据格式错误"})
+		app.AbortError(c, badRequest("请求体格式错误"))
 		return
 	}
+
 	post, err := h.service.UpdatePost(c.Request.Context(), postID, *userID, req)
 	if err != nil {
-		writeError(c, err)
+		app.AbortError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "帖子更新成功", "data": post})
+
+	app.SuccessWithMessage(c, http.StatusOK, "帖子更新成功", post)
 }
 
 func (h *Handler) DeletePost(c *gin.Context) {
@@ -110,16 +160,18 @@ func (h *Handler) DeletePost(c *gin.Context) {
 	if !ok {
 		return
 	}
-	postID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+
+	postID, err := parsePathID(c, "id", "帖子 ID 格式错误")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "帖子ID无效"})
 		return
 	}
+
 	if err := h.service.DeletePost(c.Request.Context(), postID, *userID); err != nil {
-		writeError(c, err)
+		app.AbortError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "帖子删除成功"})
+
+	app.SuccessWithMessage(c, http.StatusOK, "帖子删除成功", nil)
 }
 
 func (h *Handler) ToggleLike(c *gin.Context) {
@@ -127,31 +179,37 @@ func (h *Handler) ToggleLike(c *gin.Context) {
 	if !ok {
 		return
 	}
-	postID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+
+	postID, err := parsePathID(c, "id", "帖子 ID 格式错误")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "帖子ID无效"})
 		return
 	}
+
 	result, err := h.service.ToggleLike(c.Request.Context(), postID, *userID)
 	if err != nil {
-		writeError(c, err)
+		app.AbortError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": result.Message, "like_count": result.LikeCount, "liked": result.Liked})
+
+	app.SuccessWithMessage(c, http.StatusOK, result.Message, gin.H{
+		"like_count": result.LikeCount,
+		"liked":      result.Liked,
+	})
 }
 
 func (h *Handler) ListComments(c *gin.Context) {
-	postID, err := strconv.ParseInt(c.Param("postID"), 10, 64)
+	postID, err := parsePathID(c, "postID", "帖子 ID 格式错误")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "帖子ID无效"})
 		return
 	}
+
 	comments, err := h.service.ListComments(c.Request.Context(), postID)
 	if err != nil {
-		writeError(c, err)
+		app.AbortError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "data": comments, "count": len(comments)})
+
+	app.SuccessWithCount(c, http.StatusOK, comments, len(comments))
 }
 
 func (h *Handler) AddComment(c *gin.Context) {
@@ -159,36 +217,50 @@ func (h *Handler) AddComment(c *gin.Context) {
 	if !ok {
 		return
 	}
-	postID, err := strconv.ParseInt(c.Param("postID"), 10, 64)
+
+	postID, err := parsePathID(c, "postID", "帖子 ID 格式错误")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "帖子ID无效"})
 		return
 	}
+
 	var req AddCommentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "请求数据格式错误"})
+		app.AbortError(c, badRequest("请求体格式错误"))
 		return
 	}
+
 	comment, err := h.service.AddComment(c.Request.Context(), postID, *userID, req)
 	if err != nil {
-		writeError(c, err)
+		app.AbortError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "评论发布成功", "data": comment})
+
+	app.SuccessWithMessage(c, http.StatusCreated, "评论发布成功", comment)
 }
 
 func (h *Handler) ListRelatedPosts(c *gin.Context) {
-	postID, err := strconv.ParseInt(c.Param("postID"), 10, 64)
+	postID, err := parsePathID(c, "postID", "帖子 ID 格式错误")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "帖子ID无效"})
 		return
 	}
-	posts, err := h.service.ListRelatedPosts(c.Request.Context(), postID, parseIntDefault(c.Query("limit"), 2))
+
+	posts, err := h.service.ListRelatedPosts(c.Request.Context(), postID, parseIntDefault(c.Query("limit"), defaultRelatedNum))
 	if err != nil {
-		writeError(c, err)
+		app.AbortError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "data": posts})
+
+	app.Success(c, http.StatusOK, posts)
+}
+
+func (h *Handler) ListCategories(c *gin.Context) {
+	stats, err := h.service.ListCategories(c.Request.Context())
+	if err != nil {
+		app.AbortError(c, err)
+		return
+	}
+
+	app.Success(c, http.StatusOK, stats)
 }
 
 func (h *Handler) DeleteComment(c *gin.Context) {
@@ -196,58 +268,78 @@ func (h *Handler) DeleteComment(c *gin.Context) {
 	if !ok {
 		return
 	}
-	commentID, err := strconv.ParseInt(c.Param("commentID"), 10, 64)
+
+	commentID, err := parsePathID(c, "commentID", "评论 ID 格式错误")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "评论ID无效"})
 		return
 	}
+
 	if err := h.service.DeleteComment(c.Request.Context(), commentID, *userID); err != nil {
-		writeError(c, err)
+		app.AbortError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "评论删除成功"})
+
+	app.SuccessWithMessage(c, http.StatusOK, "评论删除成功", nil)
 }
 
 func requireUserID(c *gin.Context, secret string) (*int64, bool) {
 	userID, err := app.ParseUserIDFromRequest(c.Request, secret)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"msg": "Invalid token"})
+		app.AbortError(c, &APIError{Status: http.StatusUnauthorized, Message: "登录信息无效", Err: err})
 		return nil, false
 	}
 	if userID == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"msg": "Missing Authorization Header"})
+		app.AbortError(c, &APIError{Status: http.StatusUnauthorized, Message: "请先登录"})
 		return nil, false
 	}
 	return userID, true
 }
 
-func writeError(c *gin.Context, err error) {
-	apiErr, ok := err.(*APIError)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
+func parsePathID(c *gin.Context, name, message string) (int64, error) {
+	value, err := strconv.ParseInt(c.Param(name), 10, 64)
+	if err != nil {
+		err = badRequest(message)
+		app.AbortError(c, err)
+		return 0, err
 	}
-	c.JSON(apiErr.Status, gin.H{"message": apiErr.Message})
+	return value, nil
 }
 
-func parseIntPointer(raw string) *int64 {
+func parseOptionalInt64(raw string) (*int64, error) {
+	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return nil
+		return nil, nil
 	}
 	value, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return &value
+	return &value, nil
 }
 
 func parseIntDefault(raw string, fallback int) int {
-	if raw == "" {
-		return fallback
-	}
-	value, err := strconv.Atoi(raw)
+	value, err := strconv.Atoi(strings.TrimSpace(raw))
 	if err != nil || value <= 0 {
 		return fallback
 	}
 	return value
+}
+
+func parsePostStatus(raw string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "", "all":
+		return "all", nil
+	case "published":
+		return "published", nil
+	case "draft":
+		return "draft", nil
+	case "archived":
+		return "archived", nil
+	default:
+		return "", badRequest("status 只支持 all、published、draft、archived")
+	}
+}
+
+func badRequest(message string) error {
+	return &APIError{Status: http.StatusBadRequest, Message: message}
 }

@@ -1,7 +1,9 @@
 package app
 
 import (
+	"log/slog"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,9 +31,7 @@ func (s *rateLimiterStore) Middleware() gin.HandlerFunc {
 		ip := c.ClientIP()
 		limiter := s.getLimiter(ip)
 		if !limiter.Allow() {
-			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
-				"message": "请求过于频繁，请稍后重试",
-			})
+			AbortError(c, NewError(http.StatusTooManyRequests, "请求过于频繁，请稍后重试", nil))
 			return
 		}
 		c.Next()
@@ -49,17 +49,70 @@ func (s *rateLimiterStore) getLimiter(ip string) *rate.Limiter {
 	return limiter
 }
 
+func RequestLoggerMiddleware(logger *slog.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+
+		route := c.FullPath()
+		if route == "" {
+			route = c.Request.URL.Path
+		}
+
+		logger.Info("http request",
+			slog.String("method", c.Request.Method),
+			slog.String("path", c.Request.URL.Path),
+			slog.String("route", route),
+			slog.String("client_ip", c.ClientIP()),
+			slog.Int("status", c.Writer.Status()),
+			slog.Duration("duration", time.Since(start)),
+		)
+	}
+}
+
+func ErrorMiddleware(logger *slog.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+		if len(c.Errors) == 0 || c.Writer.Written() {
+			return
+		}
+
+		err := c.Errors.Last().Err
+		status, message := ResolveError(err)
+		if status >= http.StatusInternalServerError {
+			logger.Error("request failed", slog.Any("error", err), slog.Int("status", status))
+		}
+		Error(c, status, message)
+	}
+}
+
+func RecoveryMiddleware(logger *slog.Logger) gin.HandlerFunc {
+	return gin.CustomRecovery(func(c *gin.Context, recovered any) {
+		logger.Error("panic recovered", slog.Any("error", recovered), slog.String("path", c.Request.URL.Path))
+		Error(c, http.StatusInternalServerError, "服务器开小差了，请稍后重试")
+		c.Abort()
+	})
+}
+
 func TimeoutMiddleware(timeout time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Request = c.Request.WithContext(c.Request.Context())
 		c.Writer.Header().Set("X-Backend-Timeout", timeout.String())
 		c.Next()
 	}
 }
 
-func CORSMiddleware() gin.HandlerFunc {
+func CORSMiddleware(allowOrigins []string) gin.HandlerFunc {
+	allowAll := len(allowOrigins) == 0 || (len(allowOrigins) == 1 && allowOrigins[0] == "*")
+
 	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
+		origin := c.GetHeader("Origin")
+		if allowAll {
+			c.Header("Access-Control-Allow-Origin", "*")
+		} else if matchedOrigin(origin, allowOrigins) {
+			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Vary", "Origin")
+		}
+
 		c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Authorization,Content-Type")
 		c.Header("Access-Control-Allow-Credentials", "true")
@@ -69,6 +122,15 @@ func CORSMiddleware() gin.HandlerFunc {
 		}
 		c.Next()
 	}
+}
+
+func matchedOrigin(origin string, allowOrigins []string) bool {
+	for _, allowOrigin := range allowOrigins {
+		if strings.EqualFold(strings.TrimSpace(allowOrigin), origin) {
+			return true
+		}
+	}
+	return false
 }
 
 func HTTPSRedirectMiddleware(enabled bool) gin.HandlerFunc {

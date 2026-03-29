@@ -20,24 +20,28 @@ func main() {
 		log.Fatalf("load config: %v", err)
 	}
 
+	logger := app.NewLogger(cfg)
+
 	dbs, err := app.OpenDatabases(cfg)
 	if err != nil {
-		log.Fatalf("open database: %v", err)
+		logger.Error("open database failed", "error", err)
+		os.Exit(1)
 	}
 	defer dbs.Writer.Close()
 	defer dbs.Reader.Close()
 
 	cache := app.NewInMemoryCache()
 	events := app.NewEventBus(cache)
-	service := community.NewService(community.NewMySQLRepository(dbs.Writer, dbs.Reader), cache, events, cfg.CacheTTL)
-	handler := community.NewHandler(service, cfg.JWTSecret)
 	metrics := app.NewMetrics()
+	repo := community.NewMySQLRepository(dbs.Writer, dbs.Reader)
+	service := community.NewService(repo, cache, events, cfg.CacheTTL)
+	handler := community.NewHandler(service, cfg.JWTSecret)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go events.Run(ctx)
 
-	router := server.NewRouter(cfg, metrics, handler, func() error {
+	router := server.NewRouter(cfg, logger, metrics, handler, func() error {
 		return service.Health(context.Background())
 	})
 
@@ -49,9 +53,10 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("go post service listening on %s", cfg.Addr)
+		logger.Info("server listening", "addr", cfg.Addr)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("server start: %v", err)
+			logger.Error("server start failed", "error", err)
+			os.Exit(1)
 		}
 	}()
 
@@ -59,6 +64,7 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
+	logger.Info("server shutting down")
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
 	_ = httpServer.Shutdown(shutdownCtx)

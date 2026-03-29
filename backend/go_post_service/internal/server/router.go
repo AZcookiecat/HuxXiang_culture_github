@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log/slog"
 	"net/http"
 	"runtime"
 
@@ -10,20 +11,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(cfg app.Config, metrics *app.Metrics, communityHandler *community.Handler, health func() error) *gin.Engine {
+func NewRouter(cfg app.Config, logger *slog.Logger, metrics *app.Metrics, communityHandler *community.Handler, health func() error) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
+
 	router := gin.New()
-	router.Use(gin.Logger(), gin.Recovery())
-	router.Use(app.CORSMiddleware())
-	router.Use(app.HTTPSRedirectMiddleware(false))
+	router.Use(app.RequestLoggerMiddleware(logger))
+	router.Use(app.RecoveryMiddleware(logger))
+	router.Use(app.ErrorMiddleware(logger))
+	router.Use(app.CORSMiddleware(cfg.CORSAllowOrigins))
+	router.Use(app.HTTPSRedirectMiddleware(cfg.EnableHTTPSRedirect))
 	router.Use(app.TimeoutMiddleware(cfg.ReadTimeout))
 	router.Use(app.NewRateLimiterStore(cfg.RateLimitRPS, cfg.RateLimitBurst).Middleware())
 	router.Use(metrics.Middleware())
 
 	router.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
+		app.Success(c, http.StatusOK, gin.H{
 			"message": "湖湘文化数字化平台 API 接口",
-			"version": "go-community-1.0.0",
+			"version": "go-community-1.1.0",
 			"endpoints": gin.H{
 				"community": "/api/community",
 				"health":    "/health",
@@ -34,17 +38,13 @@ func NewRouter(cfg app.Config, metrics *app.Metrics, communityHandler *community
 
 	router.GET("/health", func(c *gin.Context) {
 		if err := health(); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"status":    "unhealthy",
-				"database":  "error",
-				"goroutines": runtime.NumGoroutine(),
-				"error":     err.Error(),
-			})
+			app.Error(c, http.StatusInternalServerError, err.Error())
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"status":    "healthy",
-			"database":  "connected",
+
+		app.Success(c, http.StatusOK, gin.H{
+			"status":     "healthy",
+			"database":   "connected",
 			"goroutines": runtime.NumGoroutine(),
 		})
 	})
@@ -53,6 +53,5 @@ func NewRouter(cfg app.Config, metrics *app.Metrics, communityHandler *community
 
 	api := router.Group("/api")
 	communityHandler.Register(api.Group("/community"))
-
 	return router
 }

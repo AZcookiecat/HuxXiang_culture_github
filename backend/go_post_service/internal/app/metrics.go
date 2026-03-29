@@ -26,7 +26,9 @@ func NewMetrics() *Metrics {
 			Buckets: prometheus.DefBuckets,
 		}, []string{"route", "method"}),
 	}
-	prometheus.MustRegister(m.requests, m.latency)
+
+	m.requests = registerCounter(m.requests)
+	m.latency = registerHistogram(m.latency)
 	return m
 }
 
@@ -34,6 +36,7 @@ func (m *Metrics) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		c.Next()
+
 		route := c.FullPath()
 		if route == "" {
 			route = "unmatched"
@@ -49,6 +52,26 @@ func (m *Metrics) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		inner.ServeHTTP(c.Writer, c.Request)
 	}
+}
+
+func registerCounter(counter *prometheus.CounterVec) *prometheus.CounterVec {
+	if err := prometheus.Register(counter); err != nil {
+		if existing, ok := err.(prometheus.AlreadyRegisteredError); ok {
+			return existing.ExistingCollector.(*prometheus.CounterVec)
+		}
+		panic(err)
+	}
+	return counter
+}
+
+func registerHistogram(histogram *prometheus.HistogramVec) *prometheus.HistogramVec {
+	if err := prometheus.Register(histogram); err != nil {
+		if existing, ok := err.(prometheus.AlreadyRegisteredError); ok {
+			return existing.ExistingCollector.(*prometheus.HistogramVec)
+		}
+		panic(err)
+	}
+	return histogram
 }
 
 func httpStatus(code int) string {

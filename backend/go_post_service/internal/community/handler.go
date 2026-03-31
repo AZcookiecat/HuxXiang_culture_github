@@ -27,8 +27,8 @@ func (h *Handler) Register(group *gin.RouterGroup) {
 	group.PUT("/posts/:id", h.UpdatePost)
 	group.DELETE("/posts/:id", h.DeletePost)
 	group.POST("/posts/:id/like", h.ToggleLike)
-	group.GET("/posts/:postID/comments", h.ListComments)
-	group.POST("/posts/:postID/comments", h.AddComment)
+	group.GET("/posts/:id/comments", h.ListComments)
+	group.POST("/posts/:id/comments", h.AddComment)
 	group.GET("/posts/related/:postID", h.ListRelatedPosts)
 	group.GET("/categories", h.ListCategories)
 	group.DELETE("/comments/:commentID", h.DeleteComment)
@@ -37,7 +37,7 @@ func (h *Handler) Register(group *gin.RouterGroup) {
 func (h *Handler) ListPosts(c *gin.Context) {
 	cursor, err := parseOptionalInt64(c.Query("cursor"))
 	if err != nil {
-		app.AbortError(c, badRequest("cursor 参数格式错误"))
+		app.AbortError(c, badRequest("cursor format is invalid"))
 		return
 	}
 
@@ -64,7 +64,7 @@ func (h *Handler) ListMyPosts(c *gin.Context) {
 
 	cursor, err := parseOptionalInt64(c.Query("cursor"))
 	if err != nil {
-		app.AbortError(c, badRequest("cursor 参数格式错误"))
+		app.AbortError(c, badRequest("cursor format is invalid"))
 		return
 	}
 
@@ -88,14 +88,14 @@ func (h *Handler) ListMyPosts(c *gin.Context) {
 }
 
 func (h *Handler) GetPost(c *gin.Context) {
-	postID, err := parsePathID(c, "id", "帖子 ID 格式错误")
+	postID, err := parsePathID(c, "id", "post ID format is invalid")
 	if err != nil {
 		return
 	}
 
 	userID, err := app.ParseUserIDFromRequest(c.Request, h.jwtSecret)
 	if err != nil {
-		app.AbortError(c, &APIError{Status: http.StatusUnauthorized, Message: "登录信息无效", Err: err})
+		app.AbortError(c, &APIError{Status: http.StatusUnauthorized, Message: "login information is invalid", Err: err})
 		return
 	}
 
@@ -116,7 +116,7 @@ func (h *Handler) CreatePost(c *gin.Context) {
 
 	var req UpsertPostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		app.AbortError(c, badRequest("请求体格式错误"))
+		app.AbortError(c, badRequest("request body format is invalid"))
 		return
 	}
 
@@ -126,7 +126,7 @@ func (h *Handler) CreatePost(c *gin.Context) {
 		return
 	}
 
-	app.SuccessWithMessage(c, http.StatusCreated, "帖子发布成功", post)
+	app.SuccessWithMessage(c, http.StatusCreated, "post created successfully", post)
 }
 
 func (h *Handler) UpdatePost(c *gin.Context) {
@@ -135,14 +135,14 @@ func (h *Handler) UpdatePost(c *gin.Context) {
 		return
 	}
 
-	postID, err := parsePathID(c, "id", "帖子 ID 格式错误")
+	postID, err := parsePathID(c, "id", "post ID format is invalid")
 	if err != nil {
 		return
 	}
 
 	var req UpsertPostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		app.AbortError(c, badRequest("请求体格式错误"))
+		app.AbortError(c, badRequest("request body format is invalid"))
 		return
 	}
 
@@ -152,7 +152,7 @@ func (h *Handler) UpdatePost(c *gin.Context) {
 		return
 	}
 
-	app.SuccessWithMessage(c, http.StatusOK, "帖子更新成功", post)
+	app.SuccessWithMessage(c, http.StatusOK, "post updated successfully", post)
 }
 
 func (h *Handler) DeletePost(c *gin.Context) {
@@ -161,7 +161,7 @@ func (h *Handler) DeletePost(c *gin.Context) {
 		return
 	}
 
-	postID, err := parsePathID(c, "id", "帖子 ID 格式错误")
+	postID, err := parsePathID(c, "id", "post ID format is invalid")
 	if err != nil {
 		return
 	}
@@ -171,7 +171,7 @@ func (h *Handler) DeletePost(c *gin.Context) {
 		return
 	}
 
-	app.SuccessWithMessage(c, http.StatusOK, "帖子删除成功", nil)
+	app.SuccessWithMessage(c, http.StatusOK, "post deleted successfully", nil)
 }
 
 func (h *Handler) ToggleLike(c *gin.Context) {
@@ -180,7 +180,7 @@ func (h *Handler) ToggleLike(c *gin.Context) {
 		return
 	}
 
-	postID, err := parsePathID(c, "id", "帖子 ID 格式错误")
+	postID, err := parsePathID(c, "id", "post ID format is invalid")
 	if err != nil {
 		return
 	}
@@ -198,7 +198,7 @@ func (h *Handler) ToggleLike(c *gin.Context) {
 }
 
 func (h *Handler) ListComments(c *gin.Context) {
-	postID, err := parsePathID(c, "postID", "帖子 ID 格式错误")
+	postID, err := parsePathID(c, "id", "post ID format is invalid")
 	if err != nil {
 		return
 	}
@@ -218,14 +218,14 @@ func (h *Handler) AddComment(c *gin.Context) {
 		return
 	}
 
-	postID, err := parsePathID(c, "postID", "帖子 ID 格式错误")
+	postID, err := parsePathID(c, "id", "post ID format is invalid")
 	if err != nil {
 		return
 	}
 
 	var req AddCommentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		app.AbortError(c, badRequest("请求体格式错误"))
+		app.AbortError(c, badRequest("request body format is invalid"))
 		return
 	}
 
@@ -235,11 +235,11 @@ func (h *Handler) AddComment(c *gin.Context) {
 		return
 	}
 
-	app.SuccessWithMessage(c, http.StatusCreated, "评论发布成功", comment)
+	app.SuccessWithMessage(c, http.StatusCreated, "comment created successfully", comment)
 }
 
 func (h *Handler) ListRelatedPosts(c *gin.Context) {
-	postID, err := parsePathID(c, "postID", "帖子 ID 格式错误")
+	postID, err := parsePathID(c, "postID", "post ID format is invalid")
 	if err != nil {
 		return
 	}
@@ -269,7 +269,7 @@ func (h *Handler) DeleteComment(c *gin.Context) {
 		return
 	}
 
-	commentID, err := parsePathID(c, "commentID", "评论 ID 格式错误")
+	commentID, err := parsePathID(c, "commentID", "comment ID format is invalid")
 	if err != nil {
 		return
 	}
@@ -279,17 +279,17 @@ func (h *Handler) DeleteComment(c *gin.Context) {
 		return
 	}
 
-	app.SuccessWithMessage(c, http.StatusOK, "评论删除成功", nil)
+	app.SuccessWithMessage(c, http.StatusOK, "comment deleted successfully", nil)
 }
 
 func requireUserID(c *gin.Context, secret string) (*int64, bool) {
 	userID, err := app.ParseUserIDFromRequest(c.Request, secret)
 	if err != nil {
-		app.AbortError(c, &APIError{Status: http.StatusUnauthorized, Message: "登录信息无效", Err: err})
+		app.AbortError(c, &APIError{Status: http.StatusUnauthorized, Message: "login information is invalid", Err: err})
 		return nil, false
 	}
 	if userID == nil {
-		app.AbortError(c, &APIError{Status: http.StatusUnauthorized, Message: "请先登录"})
+		app.AbortError(c, &APIError{Status: http.StatusUnauthorized, Message: "please login first"})
 		return nil, false
 	}
 	return userID, true
@@ -336,7 +336,7 @@ func parsePostStatus(raw string) (string, error) {
 	case "archived":
 		return "archived", nil
 	default:
-		return "", badRequest("status 只支持 all、published、draft、archived")
+		return "", badRequest("status only supports all, published, draft, archived")
 	}
 }
 

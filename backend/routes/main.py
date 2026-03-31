@@ -12,8 +12,7 @@ def index():
         'version': '1.0.0',
         'endpoints': {
             'auth': '/api/auth',
-            'resources': '/api/resources',
-            'community': '/api/community'
+            'resources': '/api/resources'
         }
     })
 

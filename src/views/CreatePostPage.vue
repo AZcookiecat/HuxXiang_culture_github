@@ -1,67 +1,60 @@
 <template>
-  <div class="create-post-page">
-    <!-- 返回按钮 -->
-    <div class="back-button-container">
-      <button class="back-button" @click="goBack">
-        <i class="fas fa-arrow-left"></i> 返回社区
-      </button>
-    </div>
-
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <div class="container">
-        <h1>发布新主题</h1>
-        <p>分享您对湖湘文化的见解与热情</p>
-      </div>
-    </div>
-
-    <!-- 创建表单 -->
+  <div class="post-editor-page">
     <div class="container">
-      <div class="create-form-container">
-        <form @submit.prevent="submitForm" class="create-form">
-          <div class="form-group">
-            <label for="title">标题 *</label>
-            <input 
-              type="text" 
-              id="title" 
-              v-model="formData.title" 
+      <button class="back-button" @click="goBack">
+        <i class="fas fa-arrow-left"></i>
+        <span>返回社区</span>
+      </button>
+
+      <section class="editor-card">
+        <div class="editor-header">
+          <p class="eyebrow">New Post</p>
+          <h1>发布新帖子</h1>
+          <p>分享你对湖湘文化的观察、问题或推荐内容。</p>
+        </div>
+
+        <form class="editor-form" @submit.prevent="submitForm">
+          <label>
+            <span>标题</span>
+            <input
+              v-model="formData.title"
+              type="text"
+              maxlength="200"
               placeholder="请输入帖子标题"
               required
-              maxlength="200"
             />
-          </div>
+          </label>
 
-          <div class="form-group">
-            <label for="category">分类 *</label>
-            <select id="category" v-model="formData.category" required>
+          <label>
+            <span>分类</span>
+            <select v-model="formData.category" required>
               <option value="">请选择分类</option>
               <option value="文化讨论">文化讨论</option>
               <option value="历史研究">历史研究</option>
               <option value="传统艺术">传统艺术</option>
               <option value="饮食文化">饮食文化</option>
             </select>
-          </div>
+          </label>
 
-          <div class="form-group">
-            <label for="content">内容 *</label>
-            <textarea 
-              id="content" 
-              v-model="formData.content" 
-              placeholder="请输入帖子内容，分享您对湖湘文化的见解..."
-              rows="15"
-              required
+          <label>
+            <span>内容</span>
+            <textarea
+              v-model="formData.content"
+              rows="14"
               maxlength="5000"
+              placeholder="请输入帖子正文，支持多段文字。"
+              required
             ></textarea>
-          </div>
+          </label>
 
           <div class="form-actions">
-            <button type="button" class="btn-cancel" @click="goBack">取消</button>
-            <button type="submit" class="btn-submit" :disabled="isSubmitting">
+            <button type="button" class="secondary-btn" @click="goBack">取消</button>
+            <button type="submit" class="primary-btn" :disabled="isSubmitting">
               {{ isSubmitting ? '发布中...' : '发布帖子' }}
             </button>
           </div>
         </form>
-      </div>
+      </section>
     </div>
   </div>
 </template>
@@ -81,233 +74,177 @@ export default {
   },
   setup(props) {
     const router = useRouter()
-    
+    const isSubmitting = ref(false)
     const formData = ref({
       title: '',
-      content: '',
-      category: ''
+      category: '',
+      content: ''
     })
-    
-    const isSubmitting = ref(false)
-    
-    // 提交表单
+
     const submitForm = async () => {
-      if (!formData.value.title.trim() || !formData.value.content.trim() || !formData.value.category) {
-        if (props.showAlert) {
-          props.showAlert('请填写所有必填项', 'error')
-        }
+      const payload = {
+        title: formData.value.title.trim(),
+        category: formData.value.category,
+        content: formData.value.content.trim()
+      }
+
+      if (!payload.title || !payload.category || !payload.content) {
+        props.showAlert?.('请完整填写标题、分类和内容。', 'error')
         return
       }
-      
+
       isSubmitting.value = true
-      
+
       try {
-        const response = await request('/community/posts', 'POST', formData.value)
-        
-        if (response.success) {
-          if (props.showAlert) {
-            props.showAlert('帖子发布成功', 'success')
-          }
-          router.push(`/post-detail/${response.data.id}`)
-        } else {
+        const response = await request('/community/posts', 'POST', payload)
+        if (!response.success) {
           throw new Error(response.message || '发布帖子失败')
         }
-      } catch (err) {
-        console.error('发布帖子错误:', err)
-        if (props.showAlert) {
-          props.showAlert(err.message || '发布帖子失败', 'error')
-        }
+
+        props.showAlert?.('帖子已发布', 'success')
+        router.push(`/post-detail/${response.data.id}`)
+      } catch (error) {
+        props.showAlert?.(error.message || '发布帖子失败', 'error')
       } finally {
         isSubmitting.value = false
       }
     }
-    
-    // 返回上一页
+
     const goBack = () => {
-      router.go(-1)
+      router.push('/community')
     }
-    
+
     return {
       formData,
+      goBack,
       isSubmitting,
-      submitForm,
-      goBack
+      submitForm
     }
   }
 }
 </script>
 
 <style scoped>
-.create-post-page {
-  padding: 2rem 0;
-}
-
-.back-button-container {
-  position: fixed;
-  top: 2rem;
-  left: 2rem;
-  z-index: 1000;
-}
-
-.back-button {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  border-radius: 25px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  font-weight: 500;
-  font-size: 1rem;
-}
-
-.back-button:hover {
-  background-color: #a60e24;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(200, 16, 46, 0.4);
-}
-
-.page-header {
-  margin: 0 0 2rem;
-  padding: 2rem 0;
-  text-align: center;
-  background: linear-gradient(to right, #f8f9fa, #e9ecef);
-}
-
-.page-header h1 {
-  font-size: 2.5rem;
-  color: var(--text-color);
-  margin-bottom: 0.5rem;
-  font-family: var(--heading-font);
-  font-weight: 700;
-}
-
-.page-header p {
-  color: var(--light-text);
-  font-size: 1.2rem;
-  margin: 0;
+.post-editor-page {
+  padding: 2rem 0 3rem;
 }
 
 .container {
-  max-width: 1000px;
+  max-width: 920px;
   margin: 0 auto;
   padding: 0 1rem;
 }
 
-.create-form-container {
-  background: white;
-  border-radius: 8px;
-  padding: 2rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: none;
+  background: transparent;
+  color: #374151;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  font-weight: 600;
 }
 
-.create-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+.editor-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
+  padding: 1.5rem;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
+.editor-header {
+  margin-bottom: 1.25rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.45rem;
+  color: #9b5a30;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.editor-header h1 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.editor-header p:last-child {
+  color: #6b7280;
+  margin-top: 0.55rem;
+}
+
+.editor-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.editor-form label {
+  display: grid;
   gap: 0.5rem;
 }
 
-.form-group label {
+.editor-form span {
   font-weight: 600;
-  color: #2c3e50;
+  color: #374151;
+}
+
+.editor-form input,
+.editor-form select,
+.editor-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d6dbe3;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
   font-size: 1rem;
-  margin-bottom: 0.3rem;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
-  padding: 0.8rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-  transition: border-color 0.3s;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(200, 16, 46, 0.1);
-}
-
-.form-group textarea {
+.editor-form textarea {
   resize: vertical;
-  min-height: 250px;
 }
 
 .form-actions {
   display: flex;
-  gap: 1rem;
   justify-content: flex-end;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
+  gap: 0.75rem;
 }
 
-.btn-cancel,
-.btn-submit {
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
+.secondary-btn,
+.primary-btn {
   border: none;
+  border-radius: 999px;
+  padding: 0.78rem 1.2rem;
+  cursor: pointer;
+  font-weight: 600;
 }
 
-.btn-cancel {
-  background: #f8f9fa;
-  color: #6c757d;
-  border: 1px solid #dee2e6;
+.secondary-btn {
+  background: #eef2f7;
+  color: #374151;
 }
 
-.btn-cancel:hover {
-  background: #e9ecef;
-}
-
-.btn-submit {
+.primary-btn {
   background: var(--primary-color);
-  color: white;
+  color: #fff;
 }
 
-.btn-submit:hover:not(:disabled) {
-  background: #a60e24;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(200, 16, 46, 0.3);
-}
-
-.btn-submit:disabled {
-  background: #cccccc;
+.primary-btn:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-@media (max-width: 768px) {
-  .page-header h1 {
-    font-size: 2rem;
-  }
-  
-  .create-form-container {
-    padding: 1.5rem;
-  }
-  
+@media (max-width: 640px) {
   .form-actions {
     flex-direction: column;
   }
-  
-  .btn-cancel,
-  .btn-submit {
+
+  .secondary-btn,
+  .primary-btn {
     width: 100%;
   }
 }

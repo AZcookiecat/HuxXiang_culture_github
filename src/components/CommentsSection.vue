@@ -1,58 +1,62 @@
 <template>
-  <div class="comments-section">
-    <h3 class="comments-title">评论区</h3>
-    
-    <!-- 发表评论 -->
-    <div class="comment-form-container">
-      <textarea 
-        v-model="newCommentContent" 
-        class="comment-input" 
-        placeholder="请输入您的评论..." 
-        rows="4"
-      ></textarea>
-      <button 
-        @click="submitComment" 
-        class="submit-comment-btn" 
-        :disabled="!newCommentContent.trim() || submitting"
-      >
-        {{ submitting ? '提交中...' : '发表评论' }}
-      </button>
+  <section class="comments-section">
+    <div class="section-header">
+      <h3>评论区</h3>
+      <span class="comment-count">{{ comments.length }} 条评论</span>
     </div>
-    
-    <!-- 评论列表 -->
-    <div v-if="comments.length > 0" class="comments-list">
-      <div 
-        v-for="comment in comments" 
-        :key="comment.id" 
-        class="comment-item"
-      >
+
+    <div class="comment-form">
+      <textarea
+        v-model="newCommentContent"
+        class="comment-input"
+        rows="4"
+        placeholder="写下你的评论..."
+      ></textarea>
+      <div class="comment-form-actions">
+        <span class="form-hint">登录后可以发表评论</span>
+        <button
+          class="submit-comment-btn"
+          :disabled="submitting || !newCommentContent.trim()"
+          @click="submitComment"
+        >
+          {{ submitting ? '提交中...' : '发表评论' }}
+        </button>
+      </div>
+    </div>
+
+    <div v-if="loading" class="comments-state">正在加载评论...</div>
+    <div v-else-if="comments.length === 0" class="comments-state">暂无评论，欢迎发表第一条评论。</div>
+
+    <div v-else class="comments-list">
+      <article v-for="comment in comments" :key="comment.id" class="comment-item">
         <div class="comment-header">
-          <img :src="comment.author?.avatar || 'https://via.placeholder.com/30x30' " alt="Avatar" class="comment-avatar" />
-          <div class="comment-author-info">
-            <span class="comment-author">{{ comment.author?.username || '匿名用户' }}</span>
-            <span class="comment-date">{{ formatDate(comment.created_at) }}</span>
+          <div class="comment-author-wrap">
+            <img
+              :src="comment.author?.avatar || 'https://via.placeholder.com/36x36'"
+              alt="avatar"
+              class="comment-avatar"
+            />
+            <div>
+              <div class="comment-author">{{ comment.author?.username || '匿名用户' }}</div>
+              <div class="comment-date">{{ formatDate(comment.created_at) }}</div>
+            </div>
           </div>
-          <button 
-            v-if="canDeleteComment(comment)" 
-            @click="deleteComment(comment.id)" 
+          <button
+            v-if="canDeleteComment(comment)"
             class="delete-comment-btn"
+            @click="deleteComment(comment.id)"
           >
             删除
           </button>
         </div>
-        <div class="comment-content">{{ comment.content }}</div>
-      </div>
+        <p class="comment-content">{{ comment.content }}</p>
+      </article>
     </div>
-    
-    <!-- 无评论提示 -->
-    <div v-else class="no-comments">
-      暂无评论，快来抢沙发吧~
-    </div>
-  </div>
+  </section>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { request } from '@/services/api.js'
 
 export default {
@@ -67,116 +71,99 @@ export default {
       default: null
     }
   },
-  emits: ['comment-added', 'comment-deleted'], // 添加事件声明
+  emits: ['comment-added', 'comment-deleted'],
   setup(props, { emit }) {
     const comments = ref([])
-    const newCommentContent = ref('')
+    const loading = ref(false)
     const submitting = ref(false)
-    
-    // 获取当前用户信息
+    const newCommentContent = ref('')
+
     const getCurrentUser = () => {
       const userStr = localStorage.getItem('user')
       return userStr ? JSON.parse(userStr) : null
     }
-    
-    // 获取评论列表
+
     const fetchComments = async () => {
+      loading.value = true
+
       try {
         const response = await request(`/community/posts/${props.postId}/comments`, 'GET')
-        if (response.success) {
-          comments.value = response.data || []
-        } else {
-          throw new Error(response.message || '获取评论失败')
-        }
-      } catch (err) {
-        console.error('获取评论错误:', err)
-        if (props.showAlert) {
-          props.showAlert(err.message || '获取评论失败', 'error')
-        }
+        comments.value = response.success ? response.data || [] : []
+      } catch (error) {
+        comments.value = []
+        props.showAlert?.(error.message || '获取评论失败', 'error')
+      } finally {
+        loading.value = false
       }
     }
-    
-    // 提交评论
+
     const submitComment = async () => {
-      if (!newCommentContent.value.trim()) {
-        if (props.showAlert) {
-          props.showAlert('评论内容不能为空', 'error')
-        }
+      const content = newCommentContent.value.trim()
+      if (!content) {
         return
       }
-      
+
       if (!localStorage.getItem('access_token')) {
-        if (props.showAlert) {
-          props.showAlert('请先登录', 'info')
-        }
+        props.showAlert?.('请先登录后再评论', 'info')
         return
       }
-      
+
       submitting.value = true
-      
+
       try {
         const response = await request(`/community/posts/${props.postId}/comments`, 'POST', {
-          content: newCommentContent.value
+          content
         })
-        
-        if (response.success) {
-          if (props.showAlert) {
-            props.showAlert('评论发表成功', 'success')
-          }
-          newCommentContent.value = ''
-          await fetchComments() // 刷新评论列表
-          emit('comment-added') // 发出评论添加事件
-        } else {
+
+        if (!response.success) {
           throw new Error(response.message || '发表评论失败')
         }
-      } catch (err) {
-        console.error('发表评论错误:', err)
-        if (props.showAlert) {
-          props.showAlert(err.message || '发表评论失败', 'error')
-        }
+
+        newCommentContent.value = ''
+        await fetchComments()
+        emit('comment-added', comments.value.length)
+        props.showAlert?.('评论已发布', 'success')
+      } catch (error) {
+        props.showAlert?.(error.message || '发表评论失败', 'error')
       } finally {
         submitting.value = false
       }
     }
-    
-    // 删除评论
+
     const deleteComment = async (commentId) => {
-      if (!confirm('确定要删除这条评论吗？')) {
+      if (!window.confirm('确定删除这条评论吗？')) {
         return
       }
-      
+
       try {
         const response = await request(`/community/comments/${commentId}`, 'DELETE')
-        
-        if (response.success) {
-          if (props.showAlert) {
-            props.showAlert('评论删除成功', 'success')
-          }
-          await fetchComments() // 刷新评论列表
-          emit('comment-deleted') // 发出评论删除事件
-        } else {
+        if (!response.success) {
           throw new Error(response.message || '删除评论失败')
         }
-      } catch (err) {
-        console.error('删除评论错误:', err)
-        if (props.showAlert) {
-          props.showAlert(err.message || '删除评论失败', 'error')
-        }
+
+        await fetchComments()
+        emit('comment-deleted', comments.value.length)
+        props.showAlert?.('评论已删除', 'success')
+      } catch (error) {
+        props.showAlert?.(error.message || '删除评论失败', 'error')
       }
     }
-    
-    // 检查是否可以删除评论
+
     const canDeleteComment = (comment) => {
       const currentUser = getCurrentUser()
-      if (!currentUser || !comment.author) return false
+      if (!currentUser || !comment.author) {
+        return false
+      }
+
       return currentUser.id === comment.author.id || currentUser.role === 'admin'
     }
-    
-    // 格式化日期
+
     const formatDate = (dateString) => {
-      if (!dateString) return ''
-      const date = new Date(dateString)
-      return date.toLocaleDateString('zh-CN', {
+      if (!dateString) {
+        return ''
+      }
+
+      return new Date(dateString).toLocaleString('zh-CN', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
@@ -184,19 +171,19 @@ export default {
         minute: '2-digit'
       })
     }
-    
-    onMounted(() => {
-      fetchComments()
-    })
-    
+
+    onMounted(fetchComments)
+    watch(() => props.postId, fetchComments)
+
     return {
-      comments,
-      newCommentContent,
-      submitting,
-      submitComment,
-      deleteComment,
       canDeleteComment,
-      formatDate
+      comments,
+      deleteComment,
+      formatDate,
+      loading,
+      newCommentContent,
+      submitComment,
+      submitting
     }
   }
 }
@@ -204,142 +191,154 @@ export default {
 
 <style scoped>
 .comments-section {
-  margin-top: 2rem;
+  margin-top: 2.5rem;
   padding-top: 2rem;
-  border-top: 1px solid #eee;
+  border-top: 1px solid #e8ecf2;
 }
 
-.comments-title {
-  font-size: 1.4rem;
-  color: #2c3e50;
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.section-header h3 {
+  margin: 0;
+  color: #243447;
+}
+
+.comment-count {
+  color: #6b7280;
+  font-size: 0.92rem;
+}
+
+.comment-form {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
   margin-bottom: 1.5rem;
-}
-
-.comment-form-container {
-  margin-bottom: 2rem;
 }
 
 .comment-input {
   width: 100%;
-  padding: 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
   resize: vertical;
-  margin-bottom: 0.5rem;
+  min-height: 120px;
+  padding: 0.9rem 1rem;
+  border: 1px solid #d6dbe3;
+  border-radius: 10px;
+  font-size: 1rem;
   box-sizing: border-box;
 }
 
 .comment-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(200, 16, 46, 0.1);
+  box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.12);
+}
+
+.comment-form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.form-hint {
+  color: #6b7280;
+  font-size: 0.9rem;
 }
 
 .submit-comment-btn {
-  background-color: var(--primary-color);
-  color: white;
+  background: var(--primary-color);
+  color: #fff;
   border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 4px;
+  border-radius: 999px;
+  padding: 0.65rem 1.2rem;
   cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s;
-}
-
-.submit-comment-btn:hover:not(:disabled) {
-  background-color: #a60e24;
 }
 
 .submit-comment-btn:disabled {
-  background-color: #cccccc;
+  opacity: 0.55;
   cursor: not-allowed;
+}
+
+.comments-state {
+  padding: 1.25rem;
+  text-align: center;
+  color: #6b7280;
+  background: #f8fafc;
+  border-radius: 10px;
 }
 
 .comments-list {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .comment-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   padding: 1rem;
-  border: 1px solid #eee;
-  border-radius: 6px;
-  background-color: #fafafa;
+  background: #fff;
 }
 
 .comment-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
-  gap: 0.8rem;
+  gap: 1rem;
+}
+
+.comment-author-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
 }
 
 .comment-avatar {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.comment-author-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
 .comment-author {
   font-weight: 600;
-  color: #333;
-  font-size: 0.95rem;
+  color: #243447;
 }
 
 .comment-date {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.delete-comment-btn {
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  color: #dc3545;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.delete-comment-btn:hover {
-  background-color: #ffebee;
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin-top: 0.15rem;
 }
 
 .comment-content {
-  color: #444;
-  line-height: 1.6;
-  padding-left: 38px;
+  margin: 0.85rem 0 0;
+  color: #374151;
+  line-height: 1.7;
+  white-space: pre-wrap;
 }
 
-.no-comments {
-  text-align: center;
-  color: #666;
-  padding: 1.5rem;
-  font-style: italic;
+.delete-comment-btn {
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  color: #b91c1c;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
 }
 
 @media (max-width: 768px) {
+  .section-header,
+  .comment-form-actions,
   .comment-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .comment-content {
-    padding-left: 0;
-  }
-  
-  .delete-comment-btn {
-    align-self: flex-end;
   }
 }
 </style>

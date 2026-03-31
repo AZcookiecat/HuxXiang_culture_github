@@ -1,229 +1,211 @@
 <template>
   <div class="community-page">
-    <!-- 页面标题 -->
-    <div class="page-header">
+    <header class="page-header">
       <div class="container">
+        <p class="eyebrow">Community</p>
         <h1>互动社区</h1>
-        <p>加入我们的社区，分享您对湖湘文化的见解与热情</p>
+        <p class="subtitle">围绕湖湘文化交流观点、分享资源，也可以报名参加线下活动。</p>
       </div>
-    </div>
+    </header>
 
-    <!-- 主要内容 -->
     <div class="container">
-      <!-- 社区导航 -->
       <div class="community-nav">
-        <button 
-          class="nav-tab" 
-          :class="{ active: activeTab === 'forum' }" 
-          @click="switchTab('forum')"
+        <button
+          v-for="tab in tabs"
+          :key="tab.key"
+          class="nav-tab"
+          :class="{ active: activeTab === tab.key }"
+          @click="switchTab(tab.key)"
         >
-          <i class="fas fa-comments"></i> 文化论坛
-        </button>
-        <button 
-          class="nav-tab" 
-          :class="{ active: activeTab === 'activities' }" 
-          @click="switchTab('activities')"
-        >
-          <i class="fas fa-calendar-alt"></i> 文化活动
-        </button>
-        <button 
-          class="nav-tab" 
-          :class="{ active: activeTab === 'contributions' }" 
-          @click="switchTab('contributions')"
-        >
-          <i class="fas fa-hand-holding-heart"></i> 内容贡献
-        </button>
-        <button 
-          class="nav-tab" 
-          :class="{ active: activeTab === 'feedback' }" 
-          @click="switchTab('feedback')"
-        >
-          <i class="fas fa-comment-dots"></i> 意见反馈
+          <i :class="tab.icon"></i>
+          <span>{{ tab.label }}</span>
         </button>
       </div>
 
-      <!-- 论坛内容 -->
-      <div v-if="activeTab === 'forum'" class="forum-content">
-        <!-- 发帖按钮 -->
-        <div class="forum-actions">
-          <button class="create-post-btn" @click="createNewPost">
-            <i class="fas fa-plus-circle"></i> 发布新主题
-          </button>
-          
-          <div class="forum-filters">
-            <select v-model="forumSortBy" @change="sortForumPosts">
+      <section v-if="activeTab === 'forum'" class="forum-content">
+        <div class="forum-toolbar">
+          <div>
+            <h2>文化论坛</h2>
+            <p>按照发布时间、热度或评论数浏览帖子。</p>
+          </div>
+          <div class="toolbar-actions">
+            <select v-model="forumSortBy" @change="resetForumPagination">
               <option value="latest">最新发布</option>
               <option value="popular">热门讨论</option>
               <option value="comments">评论最多</option>
             </select>
+            <button class="create-post-btn" @click="createNewPost">
+              <i class="fas fa-pen"></i>
+              <span>发布帖子</span>
+            </button>
           </div>
         </div>
 
-        <!-- 加载状态 -->
-        <div v-if="loading" class="loading">
-          <p>正在加载帖子...</p>
-        </div>
+        <div v-if="loading" class="state-card">正在加载帖子...</div>
+        <div v-else-if="forumPosts.length === 0" class="state-card">暂无帖子，来发布第一篇内容。</div>
 
-        <!-- 论坛帖子列表 -->
         <div v-else class="forum-posts">
-          <div v-for="post in currentPagePosts" :key="post.id" class="forum-post">
+          <article v-for="post in forumPosts" :key="post.id" class="forum-post">
             <div class="post-header">
               <div class="post-author">
-                <img :src="post.author?.avatar || 'https://via.placeholder.com/40x40' " alt="Author avatar" class="author-avatar" loading="lazy" />
-                <div class="author-info">
-                  <span class="author-name">{{ post.author?.username }}</span>
-                  <span class="post-date">{{ formatDate(post.created_at) }}</span>
+                <img
+                  :src="post.author?.avatar || 'https://via.placeholder.com/48x48'"
+                  alt="avatar"
+                  class="author-avatar"
+                />
+                <div>
+                  <div class="author-name">{{ post.author?.username || '匿名用户' }}</div>
+                  <div class="post-date">{{ formatDate(post.created_at) }}</div>
                 </div>
               </div>
-              <div class="post-stats">
-                <span class="stat-item"><i class="far fa-eye"></i> {{ post.view_count }} 浏览</span>
-                <span class="stat-item"><i class="far fa-comment"></i> {{ post.comment_count }} 评论</span>
-                <span class="stat-item"><i class="far fa-thumbs-up"></i> {{ post.like_count }} 点赞</span>
-              </div>
+              <div class="post-category">{{ getCategoryLabel(post.category) }}</div>
             </div>
-            <div class="post-content">
-              <h3 class="post-title">{{ post.title }}</h3>
-              <p class="post-excerpt">{{ post.summary }}</p>
+
+            <div class="post-body">
+              <h3>{{ post.title }}</h3>
+              <p>{{ post.summary }}</p>
             </div>
+
             <div class="post-footer">
-              <span class="post-category">{{ getCategoryLabel(post.category) }}</span>
+              <div class="post-stats">
+                <span><i class="far fa-eye"></i> {{ post.view_count }}</span>
+                <span><i class="far fa-comment"></i> {{ post.comment_count }}</span>
+                <span><i class="far fa-thumbs-up"></i> {{ post.like_count }}</span>
+              </div>
               <button class="view-post-btn" @click="viewPostDetails(post.id)">查看详情</button>
             </div>
-          </div>
+          </article>
         </div>
 
-        <!-- 分页 -->
-        <div v-if="!loading && forumPosts.length > 0" class="pagination">
-          <button class="pagination-btn" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">
+        <div v-if="forumPosts.length > 0" class="pagination">
+          <button class="pagination-btn" :disabled="pageIndex === 0 || loading" @click="goToPreviousPage">
             上一页
           </button>
-          <button class="pagination-btn" v-for="page in forumPages" :key="page" :class="{ active: currentPage === page }" @click="goToPage(page)">
-            {{ page }}
-          </button>
-          <button class="pagination-btn" :disabled="currentPage === forumPages" @click="goToPage(currentPage + 1)">
+          <span class="page-indicator">第 {{ pageIndex + 1 }} 页</span>
+          <button class="pagination-btn" :disabled="!hasMore || loading" @click="goToNextPage">
             下一页
           </button>
         </div>
-      </div>
+      </section>
 
-      <!-- 文化活动 -->
-      <div v-if="activeTab === 'activities'" class="activities-content">
+      <section v-else-if="activeTab === 'activities'" class="card-section">
+        <div class="section-intro">
+          <h2>文化活动</h2>
+          <p>关注近期活动，报名参与线下文化体验。</p>
+        </div>
         <div class="activities-grid">
-          <div v-for="activity in activities" :key="activity.id" class="activity-card">
-            <div class="activity-image">
-              <img :src="activity.imageUrl" :alt="activity.title" />
-              <div class="activity-date">
-                {{ formatActivityDate(activity.startDate) }}
-              </div>
-            </div>
+          <article v-for="activity in activities" :key="activity.id" class="activity-card">
+            <img :src="activity.imageUrl" :alt="activity.title" class="activity-image" />
             <div class="activity-info">
-              <h3 class="activity-title">{{ activity.title }}</h3>
+              <div class="activity-date">{{ formatActivityDate(activity.startDate) }}</div>
+              <h3>{{ activity.title }}</h3>
               <p class="activity-location"><i class="fas fa-map-marker-alt"></i> {{ activity.location }}</p>
               <p class="activity-description">{{ activity.description }}</p>
               <div class="activity-footer">
+                <span>{{ activity.participants }} 人已报名</span>
                 <button class="activity-btn" @click="joinActivity(activity.id)">
                   {{ activity.isJoined ? '已报名' : '我要报名' }}
                 </button>
-                <span class="participants-count">{{ activity.participants }} 人已报名</span>
               </div>
             </div>
-          </div>
+          </article>
         </div>
-      </div>
+      </section>
 
-      <!-- 内容贡献 -->
-      <div v-if="activeTab === 'contributions'" class="contributions-content">
-        <div class="contribution-form">
-          <h2>贡献您的文化资源</h2>
-          <form @submit.prevent="submitContribution">
-            <div class="form-group">
-              <label for="contribution-title">标题</label>
-              <input type="text" id="contribution-title" v-model="contribution.title" required placeholder="请输入资源标题" />
-            </div>
-            <div class="form-group">
-              <label for="contribution-category">分类</label>
-              <select id="contribution-category" v-model="contribution.category" required>
-                <option value="">请选择分类</option>
-                <option value="历史遗迹">历史遗迹</option>
-                <option value="传统艺术">传统艺术</option>
-                <option value="文学作品">文学作品</option>
-                <option value="民俗风情">民俗风情</option>
-                <option value="饮食文化">饮食文化</option>
-                <option value="建筑风格">建筑风格</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="contribution-description">描述</label>
-              <textarea id="contribution-description" v-model="contribution.description" required rows="4" placeholder="请详细描述您要分享的文化资源"></textarea>
-            </div>
-            <div class="form-group">
-              <label for="contribution-image">上传图片 (可选)</label>
-              <input type="file" id="contribution-image" accept="image/*" @change="handleImageUpload" />
-            </div>
-            <button type="submit" class="submit-btn">提交贡献</button>
+      <section v-else-if="activeTab === 'contributions'" class="card-section two-column">
+        <div class="panel">
+          <h2>内容贡献</h2>
+          <p>提交你整理的湖湘文化素材，后台审核后会进入资源库。</p>
+          <form class="stack-form" @submit.prevent="submitContribution">
+            <input v-model="contribution.title" type="text" placeholder="资源标题" required />
+            <select v-model="contribution.category" required>
+              <option value="">选择分类</option>
+              <option value="历史遗迹">历史遗迹</option>
+              <option value="传统艺术">传统艺术</option>
+              <option value="文学作品">文学作品</option>
+              <option value="民俗风情">民俗风情</option>
+              <option value="饮食文化">饮食文化</option>
+            </select>
+            <textarea
+              v-model="contribution.description"
+              rows="5"
+              placeholder="请描述资源内容与来源"
+              required
+            ></textarea>
+            <input type="file" accept="image/*" @change="handleImageUpload" />
+            <button class="primary-btn" type="submit">提交贡献</button>
           </form>
         </div>
-        
-        <div class="contribution-guidelines">
-          <h3>贡献指南</h3>
+
+        <div class="panel muted">
+          <h3>贡献说明</h3>
           <ul>
-            <li>请确保您分享的内容与湖湘文化相关</li>
-            <li>请勿上传侵犯他人版权的内容</li>
-            <li>内容将经过审核后才会发布到平台上</li>
-            <li>优质贡献者将获得平台颁发的荣誉证书</li>
+            <li>仅提交与湖湘文化相关的原创或可授权内容。</li>
+            <li>资源会进入人工审核流程。</li>
+            <li>图片、文字请尽量附带来源说明。</li>
+            <li>优质贡献会在平台首页推荐展示。</li>
           </ul>
         </div>
-      </div>
+      </section>
 
-      <!-- 意见反馈 -->
-      <div v-if="activeTab === 'feedback'" class="feedback-content">
-        <div class="feedback-form">
-          <h2>给我们留言</h2>
-          <form @submit.prevent="submitFeedback">
-            <div class="form-group">
-              <label for="feedback-type">反馈类型</label>
-              <select id="feedback-type" v-model="feedback.type" required>
-                <option value="">请选择反馈类型</option>
-                <option value="建议">功能建议</option>
-                <option value="bug">问题反馈</option>
-                <option value="compliment">表扬鼓励</option>
-                <option value="other">其他</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="feedback-content">反馈内容</label>
-              <textarea id="feedback-content" v-model="feedback.content" required rows="5" placeholder="请详细描述您的反馈内容"></textarea>
-            </div>
-            <div class="form-group">
-              <label for="feedback-contact">联系方式 (可选)</label>
-              <input type="text" id="feedback-contact" v-model="feedback.contact" placeholder="邮箱或电话，方便我们回复您" />
-            </div>
-            <button type="submit" class="submit-btn">提交反馈</button>
+      <section v-else class="card-section two-column">
+        <div class="panel">
+          <h2>意见反馈</h2>
+          <p>告诉我们你希望新增的内容或遇到的问题。</p>
+          <form class="stack-form" @submit.prevent="submitFeedback">
+            <select v-model="feedback.type" required>
+              <option value="">反馈类型</option>
+              <option value="建议">功能建议</option>
+              <option value="bug">问题反馈</option>
+              <option value="compliment">表扬鼓励</option>
+              <option value="other">其他</option>
+            </select>
+            <textarea
+              v-model="feedback.content"
+              rows="6"
+              placeholder="请尽量详细描述问题或建议"
+              required
+            ></textarea>
+            <input v-model="feedback.contact" type="text" placeholder="邮箱或电话（选填）" />
+            <button class="primary-btn" type="submit">提交反馈</button>
           </form>
         </div>
-        
-        <div class="recent-feedback" v-if="recentFeedback.length > 0">
-          <h3>近期反馈回复</h3>
+
+        <div class="panel muted">
+          <h3>近期回复</h3>
           <div v-for="item in recentFeedback" :key="item.id" class="feedback-item">
-            <div class="feedback-header">
-              <span class="feedback-type">{{ item.type }}</span>
-              <span class="feedback-date">{{ item.date }}</span>
+            <div class="feedback-meta">
+              <span>{{ item.type }}</span>
+              <span>{{ item.date }}</span>
             </div>
             <p class="feedback-question">{{ item.question }}</p>
-            <div class="feedback-reply">
-              <p>{{ item.reply }}</p>
-            </div>
+            <p class="feedback-reply">{{ item.reply }}</p>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { request } from '@/services/api.js'
+
+const CATEGORY_MAP = {
+  discussion: '文化讨论',
+  question: '文化讨论',
+  sharing: '文化讨论',
+  activity: '文化讨论',
+  resource: '文化讨论',
+  history: '历史研究',
+  art: '传统艺术',
+  custom: '文化讨论',
+  '文化讨论': '文化讨论',
+  '历史研究': '历史研究',
+  '传统艺术': '传统艺术',
+  '饮食文化': '饮食文化'
+}
 
 export default {
   name: 'CommunityPage',
@@ -235,182 +217,181 @@ export default {
   },
   setup(props) {
     const router = useRouter()
-    
-    // 状态管理
     const activeTab = ref('forum')
-    const currentPage = ref(1)
     const forumSortBy = ref('latest')
-    const forumPages = ref(1)
-    const loading = ref(true)
-    
-    // 论坛帖子数据 - 初始为空数组，后续从API获取
     const forumPosts = ref([])
-    
-    // 文化活动数据
+    const loading = ref(false)
+    const cursorStack = ref([null])
+    const pageIndex = ref(0)
+    const nextCursor = ref(null)
+    const hasMore = ref(false)
+    const limit = 6
+
+    const tabs = [
+      { key: 'forum', label: '文化论坛', icon: 'fas fa-comments' },
+      { key: 'activities', label: '文化活动', icon: 'fas fa-calendar-alt' },
+      { key: 'contributions', label: '内容贡献', icon: 'fas fa-hand-holding-heart' },
+      { key: 'feedback', label: '意见反馈', icon: 'fas fa-comment-dots' }
+    ]
+
     const activities = ref([
       {
         id: '1',
         title: '湖湘文化艺术节',
-        description: '一场集音乐、舞蹈、戏剧、美术于一体的综合性文化艺术盛宴，展示湖湘文化的独特魅力。',
-        imageUrl: 'https://picsum.photos/seed/huxiangart/400/300',
-        startDate: '2023-07-15',
-        endDate: '2023-07-20',
-        location: '长沙市湖南大剧院',
+        description: '涵盖戏曲、音乐、非遗手作与青年论坛的综合活动周。',
+        imageUrl: 'https://picsum.photos/seed/huxiang-art/640/400',
+        startDate: '2026-04-12',
+        location: '长沙市梅溪湖艺术中心',
         participants: 356,
         isJoined: false
       },
       {
         id: '2',
-        title: '岳麓书院文化讲座系列',
-        description: '邀请知名学者解读湖湘文化经典，探讨传统文化在当代的价值和意义。',
-        imageUrl: 'https://img2.baidu.com/it/u=3735106663,128794723&fm=253&app=138&f=JPEG?w=800&h=1067',
-        startDate: '2023-07-08',
-        endDate: '2023-07-08',
-        location: '岳麓书院明伦堂',
+        title: '岳麓书院公开讲座',
+        description: '围绕湖湘学派、书院文化与当代传播进行专题分享。',
+        imageUrl: 'https://picsum.photos/seed/yuelu-lecture/640/400',
+        startDate: '2026-04-18',
+        location: '岳麓书院',
         participants: 128,
         isJoined: true
       },
       {
         id: '3',
-        title: '湘绣技艺体验工作坊',
-        description: '由资深湘绣艺人亲自指导，让参与者亲身体验湘绣的制作过程，感受传统工艺的魅力。',
-        imageUrl: 'https://picsum.photos/seed/huxiangembroidery/400/300',
-        startDate: '2023-07-22',
-        endDate: '2023-07-22',
-        location: '湖南省博物馆',
+        title: '湘绣体验工作坊',
+        description: '邀请非遗传承人现场示范，体验传统刺绣工艺。',
+        imageUrl: 'https://picsum.photos/seed/xiangxiu/640/400',
+        startDate: '2026-04-26',
+        location: '湖南省博物院',
         participants: 85,
         isJoined: false
       }
     ])
-    
-    // 内容贡献表单数据
+
     const contribution = ref({
       title: '',
       category: '',
       description: '',
       image: null
     })
-    
-    // 意见反馈表单数据
+
     const feedback = ref({
       type: '',
       content: '',
       contact: ''
     })
-    
-    // 近期反馈数据
+
     const recentFeedback = ref([
       {
         id: '1',
         type: '建议',
-        question: '希望平台能够增加更多湖湘地方方言的学习资源',
-        reply: '感谢您的建议！我们正在策划湖湘方言保护与传承项目，敬请期待。',
-        date: '2023-06-12'
+        question: '希望增加更多方言与地方戏曲资料。',
+        reply: '内容团队已纳入下一批专题选题，后续会逐步补充。',
+        date: '2026-03-12'
       },
       {
         id: '2',
         type: '问题反馈',
-        question: '移动端浏览时图片加载较慢，希望能够优化',
-        reply: '您好，我们已经注意到这个问题，技术团队正在进行图片加载优化，预计下周完成。',
-        date: '2023-06-08'
+        question: '移动端图片加载速度偏慢。',
+        reply: '已在排查资源压缩与缓存策略，本轮更新会同步优化。',
+        date: '2026-03-08'
       }
     ])
-    
-    // 从API获取帖子列表
+
     const fetchForumPosts = async () => {
+      loading.value = true
+
       try {
-        loading.value = true
-        // 添加分页参数：每页3条记录
         const params = new URLSearchParams({
-          page: currentPage.value,
-          limit: 3,
+          limit: String(limit),
           sortBy: forumSortBy.value
-        });
+        })
+
+        const currentCursor = cursorStack.value[pageIndex.value]
+        if (currentCursor) {
+          params.set('cursor', String(currentCursor))
+        }
+
         const response = await request(`/community/posts?${params.toString()}`, 'GET')
-        
-        if (response.success) {
-          forumPosts.value = response.data
-          // 根据后端返回的分页信息更新总页数
-          forumPages.value = response.pagination?.pages || 1
-        } else {
-          throw new Error(response.message || '获取帖子列表失败')
+        if (!response.success) {
+          throw new Error(response.message || '获取帖子失败')
         }
-      } catch (err) {
-        console.error('获取帖子列表错误:', err)
-        if (props.showAlert) {
-          props.showAlert(err.message || '获取帖子列表失败', 'error')
-        }
+
+        forumPosts.value = response.data || []
+        nextCursor.value = response.pagination?.cursor ?? null
+        hasMore.value = Boolean(response.pagination?.has_more)
+      } catch (error) {
+        forumPosts.value = []
+        hasMore.value = false
+        nextCursor.value = null
+        props.showAlert?.(error.message || '获取帖子失败', 'error')
       } finally {
         loading.value = false
       }
     }
-    
-    // 方法：切换标签页
-    const switchTab = (tab) => {
+
+    const resetForumPagination = async () => {
+      cursorStack.value = [null]
+      pageIndex.value = 0
+      await fetchForumPosts()
+    }
+
+    const goToNextPage = async () => {
+      if (!hasMore.value || !nextCursor.value) {
+        return
+      }
+
+      const nextIndex = pageIndex.value + 1
+      if (cursorStack.value.length === nextIndex) {
+        cursorStack.value.push(nextCursor.value)
+      } else {
+        cursorStack.value[nextIndex] = nextCursor.value
+      }
+
+      pageIndex.value = nextIndex
+      await fetchForumPosts()
+    }
+
+    const goToPreviousPage = async () => {
+      if (pageIndex.value === 0) {
+        return
+      }
+
+      pageIndex.value -= 1
+      await fetchForumPosts()
+    }
+
+    const switchTab = async (tab) => {
       activeTab.value = tab
-      // 当切换到论坛标签时，刷新帖子列表
-      if (tab === 'forum') {
-        fetchForumPosts()
+      if (tab === 'forum' && forumPosts.value.length === 0) {
+        await fetchForumPosts()
       }
     }
-    
-    // 方法：创建新帖子
+
     const createNewPost = () => {
       router.push('/create-post')
     }
-    
-    // 方法：查看帖子详情
+
     const viewPostDetails = (postId) => {
       router.push(`/post-detail/${postId}`)
     }
-    
-    // 方法：论坛帖子排序
-    const sortForumPosts = () => {
-      // 调用获取帖子列表函数，这会使用当前的排序方式
-      fetchForumPosts()
-    }
-    
-    // 计算属性：当前页显示的帖子
-    const currentPagePosts = computed(() => {
-      // 直接返回从后端获取的当前页数据，不需要前端再进行切片
-      return forumPosts.value;
-    })
-    
-    // 方法：分页导航
-    const goToPage = (page) => {
-      if (page >= 1 && page <= forumPages.value) {
-        currentPage.value = page
-        // 切换页面时重新获取数据
-        fetchForumPosts()
-      }
-    }
-    
-    // 方法：报名活动
+
     const joinActivity = (activityId) => {
-      const activity = activities.value.find(a => a.id === activityId)
-      if (activity) {
-        if (activity.isJoined) {
-          if (props.showAlert) {
-            props.showAlert('您已取消报名该活动', 'success')
-          }
-          activity.isJoined = false
-          activity.participants--
-        } else {
-          if (props.showAlert) {
-            props.showAlert('报名成功！我们将通过站内信通知您活动详情', 'success')
-          }
-          activity.isJoined = true
-          activity.participants++
-        }
+      const activity = activities.value.find((item) => item.id === activityId)
+      if (!activity) {
+        return
       }
+
+      activity.isJoined = !activity.isJoined
+      activity.participants += activity.isJoined ? 1 : -1
+
+      props.showAlert?.(
+        activity.isJoined ? '报名成功，活动提醒将通过站内消息发送。' : '已取消报名。',
+        'success'
+      )
     }
-    
-    // 方法：提交内容贡献
+
     const submitContribution = () => {
-      if (props.showAlert) {
-        props.showAlert('感谢您的贡献！我们将尽快审核您提交的内容', 'success')
-      }
-      // 重置表单
+      props.showAlert?.('内容贡献已提交，审核通过后会展示到平台中。', 'success')
       contribution.value = {
         title: '',
         category: '',
@@ -418,96 +399,66 @@ export default {
         image: null
       }
     }
-    
-    // 方法：处理图片上传
+
     const handleImageUpload = (event) => {
-      const file = event.target.files[0]
-      if (file) {
-        contribution.value.image = file
-      }
+      contribution.value.image = event.target.files?.[0] || null
     }
-    
-    // 方法：提交反馈
+
     const submitFeedback = () => {
-      if (props.showAlert) {
-        props.showAlert('感谢您的反馈！我们会认真对待每一条建议', 'success')
-      }
-      // 重置表单
+      props.showAlert?.('反馈已收到，感谢你的建议。', 'success')
       feedback.value = {
         type: '',
         content: '',
         contact: ''
       }
     }
-    
-    // 方法：格式化日期
+
     const formatDate = (dateString) => {
-      const date = new Date(dateString)
-      return date.toLocaleDateString('zh-CN', {
+      if (!dateString) {
+        return ''
+      }
+
+      return new Date(dateString).toLocaleString('zh-CN', {
         year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+        month: '2-digit',
+        day: '2-digit'
       })
     }
-    
-    // 方法：格式化活动日期
+
     const formatActivityDate = (dateString) => {
       const date = new Date(dateString)
-      const month = date.getMonth() + 1
-      const day = date.getDate()
-      return `${month}月${day}日`
+      return `${date.getMonth() + 1} 月 ${date.getDate()} 日`
     }
 
-    // 分类映射函数 - 只保留四种主要分类
-    const getCategoryLabel = (category) => {
-      const categoryMap = {
-        '文化讨论': '文化讨论',
-        '历史研究': '历史研究',
-        '传统艺术': '传统艺术',
-        '饮食文化': '饮食文化',
-        'discussion': '文化讨论',
-        'question': '文化讨论',
-        'sharing': '文化讨论',
-        'activity': '文化讨论',
-        'resource': '文化讨论',
-        'history': '历史研究',
-        'art': '传统艺术',
-        'custom': '文化讨论',
-        'default': '文化讨论'
-      };
-      return categoryMap[category] || '文化讨论';
-    }
+    const getCategoryLabel = (category) => CATEGORY_MAP[category] || '文化讨论'
 
-    // 组件挂载时获取帖子列表
-    onMounted(() => {
-      fetchForumPosts()
-    })
-    
+    onMounted(fetchForumPosts)
+
     return {
       activeTab,
-      currentPage,
-      forumSortBy,
-      forumPages,
-      forumPosts,
-      currentPagePosts,
-      loading,
       activities,
       contribution,
-      feedback,
-      recentFeedback,
-      switchTab,
       createNewPost,
-      viewPostDetails,
-      sortForumPosts,
-      goToPage,
-      joinActivity,
-      submitContribution,
-      handleImageUpload,
-      submitFeedback,
-      formatDate,
+      feedback,
+      forumPosts,
+      forumSortBy,
       formatActivityDate,
-      fetchForumPosts,
-      getCategoryLabel
+      formatDate,
+      getCategoryLabel,
+      goToNextPage,
+      goToPreviousPage,
+      handleImageUpload,
+      hasMore,
+      joinActivity,
+      loading,
+      pageIndex,
+      recentFeedback,
+      resetForumPagination,
+      submitContribution,
+      submitFeedback,
+      switchTab,
+      tabs,
+      viewPostDetails
     }
   }
 }
@@ -515,516 +466,351 @@ export default {
 
 <style scoped>
 .community-page {
-  padding: 2rem 0;
+  padding-bottom: 3rem;
 }
 
 .page-header {
-  background-size: cover;
-  background-position: center;
-  color: white;
-  padding: 2rem 0;
-  text-align: center;
+  padding: 3rem 0 2.5rem;
   margin-top: 20px;
+  background:
+    radial-gradient(circle at top right, rgba(200, 16, 46, 0.16), transparent 32%),
+    linear-gradient(135deg, #f8f1ea 0%, #fff 45%, #f4f7fb 100%);
+}
+
+.container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  color: #9b5a30;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .page-header h1 {
-  color: black;
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
+  margin: 0;
+  font-size: clamp(2.3rem, 5vw, 3.4rem);
+  color: #1f2937;
 }
 
-.page-header p {
-  color: black;
-  font-size: 1.2rem;
-  max-width: 800px;
-  margin: 0 auto;
+.subtitle {
+  max-width: 640px;
+  margin: 0.9rem 0 0;
+  color: #4b5563;
+  line-height: 1.7;
 }
 
 .community-nav {
-  display: flex;
-  margin: 2rem 0;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: 2rem 0 1.75rem;
 }
 
 .nav-tab {
-  flex: 1;
-  background-color: transparent;
-  border: none;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 16px;
   padding: 1rem;
-  cursor: pointer;
-  transition: all 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-  gap: 0.5rem;
-}
-
-.nav-tab:hover {
-  background-color: #e9ecef;
+  gap: 0.6rem;
+  cursor: pointer;
+  color: #374151;
+  font-weight: 600;
+  transition: all 0.2s ease;
 }
 
 .nav-tab.active {
-  background-color: var(--primary-color);
-  color: white;
+  background: #1f2937;
+  color: #fff;
+  border-color: #1f2937;
+  transform: translateY(-2px);
 }
 
-/* 论坛样式 */
-.forum-actions {
+.forum-toolbar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
+  align-items: end;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
-.create-post-btn {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  border-radius: 4px;
+.forum-toolbar h2,
+.section-intro h2,
+.panel h2 {
+  margin: 0 0 0.3rem;
+  color: #1f2937;
+}
+
+.forum-toolbar p,
+.section-intro p,
+.panel p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.toolbar-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: background-color 0.3s;
+  gap: 0.75rem;
 }
 
-.create-post-btn:hover {
-  background-color: var(--primary-dark);
+.toolbar-actions select,
+.stack-form input,
+.stack-form select,
+.stack-form textarea {
+  width: 100%;
+  border: 1px solid #d6dbe3;
+  border-radius: 12px;
+  padding: 0.8rem 0.95rem;
+  font-size: 1rem;
+  box-sizing: border-box;
 }
 
-.forum-filters select {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background-color: white;
+.create-post-btn,
+.primary-btn,
+.activity-btn,
+.view-post-btn,
+.pagination-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.75rem 1.15rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.create-post-btn,
+.primary-btn,
+.activity-btn,
+.view-post-btn {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+.state-card,
+.panel,
+.forum-post {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.05);
+}
+
+.state-card {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.forum-posts {
+  display: grid;
+  gap: 1rem;
 }
 
 .forum-post {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1rem;
-  transition: box-shadow 0.3s;
+  padding: 1.35rem;
 }
 
-.forum-post:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.post-header {
+.post-header,
+.post-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  gap: 1rem;
 }
 
 .post-author {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.9rem;
 }
 
 .author-avatar {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.author-info {
-  display: flex;
-  flex-direction: column;
-}
-
 .author-name {
-  font-weight: bold;
-  color: #333;
+  font-weight: 700;
+  color: #1f2937;
 }
 
 .post-date {
-  font-size: 0.85rem;
-  color: #999;
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-top: 0.2rem;
+}
+
+.post-category {
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.88rem;
+}
+
+.post-body h3 {
+  margin: 1rem 0 0.65rem;
+  color: #111827;
+}
+
+.post-body p {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.75;
 }
 
 .post-stats {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.post-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.3rem;
-  color: #333;
-}
-
-.post-excerpt {
-  margin: 0 0 1rem 0;
-  color: #666;
-  line-height: 1.5;
-}
-
-.post-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.post-category {
-  background-color: #f0f0f0;
-  padding: 0.25rem 0.75rem;
-  border-radius: 15px;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.view-post-btn {
-  background-color: var(--secondary-color);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  transition: background-color 0.3s;
-}
-
-.view-post-btn:hover {
-  background-color: var(--secondary-dark);
+  color: #6b7280;
 }
 
 .pagination {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 0.5rem;
-  margin: 2rem 0;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
 
 .pagination-btn {
-  background-color: white;
-  border: 1px solid #ddd;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.3s;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background-color: #f8f9fa;
-}
-
-.pagination-btn.active {
-  background-color: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
+  background: #fff;
+  border: 1px solid #d6dbe3;
+  color: #1f2937;
 }
 
 .pagination-btn:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
-  opacity: 0.5;
 }
 
-.loading {
-  text-align: center;
-  padding: 2rem;
-  font-size: 1.2rem;
-  color: #666;
+.page-indicator {
+  color: #4b5563;
+  font-weight: 600;
 }
 
-/* 活动样式 */
+.card-section {
+  margin-top: 1rem;
+}
+
 .activities-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
 }
 
 .activity-card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.activity-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
 }
 
 .activity-image {
-  position: relative;
-  height: 200px;
-  overflow: hidden;
-}
-
-.activity-image img {
   width: 100%;
-  height: 100%;
+  height: 220px;
   object-fit: cover;
-  transition: transform 0.3s;
-}
-
-.activity-card:hover .activity-image img {
-  transform: scale(1.05);
-}
-
-.activity-date {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background-color: var(--primary-color);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-weight: bold;
 }
 
 .activity-info {
-  padding: 1.5rem;
+  padding: 1.2rem;
 }
 
-.activity-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.3rem;
-  color: #333;
+.activity-date {
+  color: #9b5a30;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
 }
 
-.activity-location {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #666;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-}
-
+.activity-location,
 .activity-description {
-  color: #666;
-  line-height: 1.5;
-  margin-bottom: 1.5rem;
+  color: #4b5563;
 }
 
-.activity-footer {
+.activity-footer,
+.feedback-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
-.activity-btn {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+.two-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  gap: 1rem;
 }
 
-.activity-btn:hover {
-  background-color: var(--primary-dark);
+.panel {
+  padding: 1.4rem;
 }
 
-.activity-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
+.panel.muted {
+  background: #f8fafc;
 }
 
-.participants-count {
-  color: #666;
+.stack-form {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.feedback-item + .feedback-item {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.feedback-meta {
+  color: #6b7280;
   font-size: 0.9rem;
-}
-
-/* 内容贡献样式 */
-.contributions-content {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 2rem;
-}
-
-.contribution-form h2 {
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  color: #333;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: bold;
-  color: #333;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.form-group textarea {
-  resize: vertical;
-}
-
-.submit-btn {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  border-radius: 4px;
-  font-size: 1rem;
-  transition: background-color 0.3s;
-}
-
-.submit-btn:hover {
-  background-color: var(--primary-dark);
-}
-
-.contribution-guidelines {
-  background-color: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 8px;
-}
-
-.contribution-guidelines h3 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: #333;
-}
-
-.contribution-guidelines ul {
-  margin: 0;
-  padding-left: 1.5rem;
-  color: #666;
-}
-
-.contribution-guidelines li {
-  margin-bottom: 0.5rem;
-  line-height: 1.5;
-}
-
-/* 反馈样式 */
-.feedback-content {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 2rem;
-}
-
-.feedback-form h2 {
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  color: #333;
-}
-
-.recent-feedback h3 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: #333;
-}
-
-.feedback-item {
-  background-color: #f8f9fa;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
-
-.feedback-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-.feedback-type {
-  background-color: var(--secondary-color);
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 15px;
-  font-size: 0.85rem;
-}
-
-.feedback-date {
-  font-size: 0.85rem;
-  color: #999;
 }
 
 .feedback-question {
-  margin: 0 0 0.5rem 0;
-  color: #666;
-  line-height: 1.5;
+  margin: 0.45rem 0;
+  font-weight: 600;
+  color: #1f2937;
 }
 
 .feedback-reply {
-  background-color: white;
-  padding: 0.75rem;
-  border-radius: 4px;
-  border-left: 3px solid var(--primary-color);
-}
-
-.feedback-reply p {
   margin: 0;
-  color: #333;
+  color: #4b5563;
+  line-height: 1.7;
 }
 
-/* 响应式设计 */
-@media (max-width: 992px) {
-  .contributions-content,
-  .feedback-content {
+@media (max-width: 900px) {
+  .community-nav,
+  .two-column {
     grid-template-columns: 1fr;
   }
-}
 
-@media (max-width: 768px) {
-  .page-header h1 {
-    font-size: 2rem;
-  }
-  
-  .community-nav {
-    flex-direction: column;
-  }
-  
-  .nav-tab {
-    justify-content: flex-start;
-    padding: 1rem 1.5rem;
-  }
-  
-  .forum-actions {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-  }
-  
-  .activities-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .post-header {
+  .forum-toolbar,
+  .toolbar-actions,
+  .post-header,
+  .post-footer,
+  .activity-footer {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1rem;
   }
-  
-  .pagination {
-    flex-wrap: wrap;
+
+  .toolbar-actions {
+    width: 100%;
+  }
+
+  .toolbar-actions select,
+  .create-post-btn {
+    width: 100%;
   }
 }
 </style>
